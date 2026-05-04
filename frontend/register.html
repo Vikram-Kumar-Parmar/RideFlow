@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register — RideFlow</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">RideFlow</div>
+    <nav><a href="/login.html" class="btn secondary">Sign in</a></nav>
+  </header>
+
+  <main class="center-screen">
+    <div class="card auth-card">
+      <h2 style="margin-top:0">Create account</h2>
+      <div id="msg"></div>
+      <form id="regForm">
+        <label>Full name</label>
+        <input name="full_name" required />
+        <div style="height:8px"></div>
+        <label>Email</label>
+        <input name="email" type="email" required />
+        <div style="height:8px"></div>
+        <label>Phone</label>
+        <input name="phone" required placeholder="+92300..." />
+        <div style="height:8px"></div>
+        <label>Password</label>
+        <input name="password" type="password" required minlength="6" />
+        <div style="height:8px"></div>
+        <label>Role</label>
+        <select name="role" id="role">
+          <option value="RIDER">Rider</option>
+          <option value="DRIVER">Driver</option>
+        </select>
+        <div id="driverFields" class="hide">
+          <div style="height:8px"></div>
+          <label>License #</label>
+          <input name="license_num" />
+          <div style="height:8px"></div>
+          <label>CNIC</label>
+          <input name="cnic" placeholder="42101-1234567-1" />
+        </div>
+        <div style="height:14px"></div>
+        <button class="btn" type="submit" style="width:100%">Sign up</button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B
+  </footer>
+
+  <script type="module">
+    import { api, setSession } from '/js/api.js';
+    const role = document.getElementById('role');
+    const driverFields = document.getElementById('driverFields');
+    role.addEventListener('change', () => {
+      driverFields.classList.toggle('hide', role.value !== 'DRIVER');
+    });
+    const form = document.getElementById('regForm');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.innerHTML = '';
+      const fd = new FormData(form);
+      const body = Object.fromEntries(fd);
+      try {
+        const r = await api('/api/auth/register', {
+          method: 'POST', body: JSON.stringify(body),
+        });
+        setSession(r.token, r.user);
+        const rl = String(r.user.role).toUpperCase();
+        location.href = rl === 'RIDER' ? '/rider.html'
+          : rl === 'DRIVER' ? '/driver.html' : '/admin.html';
+      } catch (err) {
+        msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

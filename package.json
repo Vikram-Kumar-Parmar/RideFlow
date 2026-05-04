@@ -1,0 +1,26 @@
+{
+  "name": "rideflow",
+  "version": "1.0.0",
+  "description": "RideFlow — ride-hailing platform (Database Systems D3, Vikram Kumar 23K-2062 DS-4B)",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "db:setup": "node backend/scripts/setup-db.js",
+    "db:seed": "node backend/scripts/setup-db.js --seed-only",
+    "lint": "eslint backend frontend/js --no-eslintrc --env browser,node,es2022 --parser-options=ecmaVersion:2022,sourceType:module || true"
+  },
+  "keywords": ["ride-hailing", "mysql", "tidb", "express"],
+  "author": "Vikram Kumar (23K-2062, DS-4B)",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

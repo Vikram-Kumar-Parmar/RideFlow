@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RideFlow</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <main class="center-screen">
+    <div class="card auth-card" style="text-align:center">
+      <h1 style="color:var(--primary); margin-top:0">RideFlow</h1>
+      <p>Loading…</p>
+    </div>
+  </main>
+  <footer class="app-footer">
+    Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B
+  </footer>
+  <script type="module">
+    import { getUser } from '/js/api.js';
+    const u = getUser();
+    if (!u) location.href = '/login.html';
+    else if (String(u.role).toUpperCase() === 'RIDER') location.href = '/rider.html';
+    else if (String(u.role).toUpperCase() === 'DRIVER') location.href = '/driver.html';
+    else location.href = '/admin.html';
+  </script>
+</body>
+</html>

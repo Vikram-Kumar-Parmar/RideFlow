@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — RideFlow</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">RideFlow · Admin</div>
+    <nav>
+      <span class="who" id="who"></span>
+      <button class="btn secondary" id="logoutBtn">Sign out</button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button data-tab="dash" class="active">Dashboard</button>
+      <button data-tab="users">Users</button>
+      <button data-tab="vehicles">Vehicles</button>
+      <button data-tab="fares">Fare rules</button>
+      <button data-tab="reports">Reports</button>
+      <button data-tab="alerts">Alerts</button>
+    </div>
+
+    <section id="tab-dash">
+      <div class="card">
+        <h2>Live snapshot</h2>
+        <div id="kpis" class="grid-3"></div>
+      </div>
+      <div class="card">
+        <h2>Active rides (ActiveRidesView)</h2>
+        <div id="activeTable"></div>
+      </div>
+      <div class="card">
+        <h2>Top drivers (TopDriversView, avg rating &gt; 4.5)</h2>
+        <div id="topDriversTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-users" class="hide">
+      <div class="card">
+        <h2>Users</h2>
+        <div id="usersTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-vehicles" class="hide">
+      <div class="card">
+        <h2>Vehicles</h2>
+        <div id="vehiclesTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-fares" class="hide">
+      <div class="card">
+        <h2>Fare rules</h2>
+        <div id="faresTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-reports" class="hide">
+      <div class="card">
+        <h2>Revenue per city — <code>SUM(amount) GROUP BY city</code></h2>
+        <div id="revenueTable"></div>
+      </div>
+      <div class="card">
+        <h2>Trips per driver — <code>COUNT(*) GROUP BY driver_id</code></h2>
+        <div id="tripsTable"></div>
+      </div>
+      <div class="card">
+        <h2>Low-rated drivers — <code>HAVING AVG(score) &lt; 3.5</code></h2>
+        <div id="lowRatedTable"></div>
+      </div>
+      <div class="card">
+        <h2>Full trip report — INNER JOIN riders × rides × drivers × vehicles</h2>
+        <div id="fullTripTable"></div>
+      </div>
+      <div class="card">
+        <h2>All riders — LEFT JOIN (zero-ride riders included)</h2>
+        <div id="allRidersTable"></div>
+      </div>
+      <div class="card">
+        <h2>Promo discount usage — JOIN payments × promo_codes</h2>
+        <div id="promoTable"></div>
+      </div>
+      <div class="card">
+        <h2>Per-rider completed-ride history</h2>
+        <div class="row">
+          <div style="width:200px">
+            <label>Rider</label>
+            <select id="riderPicker"></select>
+          </div>
+          <div><button class="btn" id="loadRiderRides">Load</button></div>
+        </div>
+        <div id="riderRidesTable" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <h2>Drivers in city (ordered by rating)</h2>
+        <div class="row">
+          <div style="width:200px">
+            <label>City</label>
+            <input id="cityInput" placeholder="Karachi" />
+          </div>
+          <div><button class="btn" id="loadDriversCity">Load</button></div>
+        </div>
+        <div id="driversCityTable" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <section id="tab-alerts" class="hide">
+      <div class="card">
+        <h2>Admin notifications (from low-rating trigger)</h2>
+        <div id="alertsTable"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B
+  </footer>
+  <script type="module" src="/js/admin.js"></script>
+</body>
+</html>
