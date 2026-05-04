@@ -37,7 +37,8 @@ router.post('/rides', async (req, res, next) => {
 
     await conn.beginTransaction();
 
-    // Pick an ONLINE driver who has a verified vehicle of the right type.
+    // Pick an ONLINE driver who has a verified vehicle of the right type
+    // and no other ride still pending acceptance / mid-trip.
     const [drivers] = await conn.query(
       `SELECT d.driver_id, v.vehicle_id, fr.rule_id
          FROM drivers d
@@ -47,6 +48,11 @@ router.post('/rides', async (req, res, next) => {
           AND d.verif_status = 'VERIFIED'
           AND v.verif_status = 'VERIFIED'
           AND v.vehicle_type = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM rides rr
+             WHERE rr.driver_id = d.driver_id
+               AND rr.ride_status IN ('REQUESTED','ACCEPTED','DRIVER_EN_ROUTE','IN_PROGRESS')
+          )
         ORDER BY d.avg_rating DESC, d.total_trips DESC
         LIMIT 1`,
       [vehicle_type]
@@ -148,11 +154,7 @@ router.post('/rides', async (req, res, next) => {
       ]
     );
 
-    // Mark driver as ON_TRIP
-    await conn.query(
-      `UPDATE drivers SET avail_status = 'ON_TRIP' WHERE driver_id = ?`,
-      [driver_id]
-    );
+    // Driver stays ONLINE until they tap Accept (driver route flips them to ON_TRIP).
 
     await conn.commit();
     res.status(201).json({

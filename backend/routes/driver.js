@@ -72,18 +72,29 @@ router.get('/incoming', async (req, res, next) => {
 });
 
 router.post('/rides/:id/accept', async (req, res, next) => {
+  const conn = await pool.getConnection();
   try {
     const driverId = await getDriverId(req.user.user_id);
-    const result = await execute(
+    await conn.beginTransaction();
+    const [u] = await conn.query(
       `UPDATE rides SET ride_status = 'ACCEPTED'
         WHERE ride_id = ? AND driver_id = ? AND ride_status = 'REQUESTED'`,
       [req.params.id, driverId]
     );
-    if (result.affectedRows === 0) {
+    if (u.affectedRows === 0) {
+      await conn.rollback();
       return res.status(409).json({ error: 'Ride no longer available' });
     }
+    await conn.query(
+      `UPDATE drivers SET avail_status = 'ON_TRIP' WHERE driver_id = ?`,
+      [driverId]
+    );
+    await conn.commit();
     res.json({ ok: true, ride_id: Number(req.params.id), ride_status: 'ACCEPTED' });
-  } catch (e) { next(e); }
+  } catch (e) {
+    await conn.rollback();
+    next(e);
+  } finally { conn.release(); }
 });
 
 router.post('/rides/:id/reject', async (req, res, next) => {
