@@ -154,6 +154,15 @@ router.post('/rides', async (req, res, next) => {
       ]
     );
 
+    // On MySQL the trg_promo_usage_increment trigger handles this. TiDB
+    // doesn't support triggers, so do it inline.
+    if (target === 'tidb' && promoId) {
+      await conn.query(
+        `UPDATE promo_codes SET usage_count = usage_count + 1 WHERE promo_id = ?`,
+        [promoId]
+      );
+    }
+
     // Driver stays ONLINE until they tap Accept (driver route flips them to ON_TRIP).
 
     await conn.commit();
@@ -274,6 +283,30 @@ router.post('/ratings', async (req, res, next) => {
         WHERE d.driver_id = ?`,
       [ride.driver_id]
     );
+
+    // On MySQL the trg_driver_low_rating_flag trigger sets is_flagged + writes
+    // an admin notification when avg crosses below 3.5. TiDB has no triggers,
+    // so do the same work inline.
+    if (target === 'tidb') {
+      const [drv] = await conn.query(
+        `SELECT avg_rating, is_flagged FROM drivers WHERE driver_id = ?`,
+        [ride.driver_id]
+      );
+      if (drv.length && Number(drv[0].avg_rating) < 3.5 && !drv[0].is_flagged) {
+        await conn.query(
+          `UPDATE drivers SET is_flagged = 1 WHERE driver_id = ?`,
+          [ride.driver_id]
+        );
+        await conn.query(
+          `INSERT INTO admin_notifications (message, related_user_id)
+           VALUES (?, ?)`,
+          [
+            `Driver #${ride.driver_id} flagged for low average rating (${Number(drv[0].avg_rating).toFixed(2)})`,
+            ride.driver_user_id,
+          ]
+        );
+      }
+    }
 
     await conn.commit();
     res.status(201).json({ ok: true });

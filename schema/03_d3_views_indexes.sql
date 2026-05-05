@@ -60,35 +60,10 @@ WHERE d.avg_rating > 4.5
 ORDER BY d.avg_rating DESC, d.total_trips DESC;
 
 -- ---------- INDEXES --------------------------------------------------
--- Drop-if-exists pattern is awkward in MySQL <8.0.13, so we wrap each
--- CREATE INDEX in a small idempotency check using information_schema.
+-- 01_d2_base.sql DROPs and recreates the database, so plain CREATE INDEX
+-- statements are always safe; both MySQL 8 and TiDB accept them.
 
-DROP PROCEDURE IF EXISTS _create_index_if_missing;
-DELIMITER //
-CREATE PROCEDURE _create_index_if_missing(
-  IN p_table  VARCHAR(64),
-  IN p_index  VARCHAR(64),
-  IN p_cols   VARCHAR(255)
-)
-BEGIN
-  DECLARE c INT DEFAULT 0;
-  SELECT COUNT(*) INTO c
-  FROM information_schema.statistics
-  WHERE table_schema = DATABASE()
-    AND table_name   = p_table
-    AND index_name   = p_index;
-  IF c = 0 THEN
-    SET @s = CONCAT('CREATE INDEX ', p_index, ' ON ', p_table, '(', p_cols, ')');
-    PREPARE st FROM @s;
-    EXECUTE st;
-    DEALLOCATE PREPARE st;
-  END IF;
-END//
-DELIMITER ;
-
-CALL _create_index_if_missing('rides',     'idx_rides_rider_id',  'rider_id');
-CALL _create_index_if_missing('rides',     'idx_rides_driver_id', 'driver_id');
-CALL _create_index_if_missing('rides',     'idx_rides_status',    'ride_status');
-CALL _create_index_if_missing('locations', 'idx_locations_city',  'city');
-
-DROP PROCEDURE IF EXISTS _create_index_if_missing;
+CREATE INDEX idx_rides_rider_id  ON rides(rider_id);
+CREATE INDEX idx_rides_driver_id ON rides(driver_id);
+CREATE INDEX idx_rides_status    ON rides(ride_status);
+CREATE INDEX idx_locations_city  ON locations(city);
