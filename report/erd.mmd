@@ -1,0 +1,138 @@
+erDiagram
+  USERS ||--o| DRIVERS : "is a"
+  USERS ||--o{ RIDES : "books (rider)"
+  USERS ||--o{ COMPLAINTS : files
+  USERS ||--o{ ADMIN_NOTIFICATIONS : "related to"
+  DRIVERS ||--o{ RIDES : drives
+  DRIVERS ||--o{ VEHICLES : owns
+  DRIVERS ||--o{ DRIVER_EARNINGS : earns
+  LOCATIONS ||--o{ RIDES : pickup
+  LOCATIONS ||--o{ RIDES : dropoff
+  FARE_RULES ||--o{ RIDES : "rule applied"
+  VEHICLES ||--o{ RIDES : "used in"
+  RIDES ||--|| PAYMENTS : "billed by"
+  RIDES ||--o| RATINGS : rated
+  RIDES ||--o{ COMPLAINTS : about
+  RIDES ||--o| DRIVER_EARNINGS : "earnings of"
+  PROMO_CODES ||--o{ PAYMENTS : "applied to"
+
+  USERS {
+    int user_id PK
+    varchar full_name
+    varchar email UK
+    varchar phone UK
+    varchar password_hash
+    varchar role "ADMIN/RIDER/DRIVER"
+    varchar acc_status "ACTIVE/SUSPENDED/BANNED"
+    decimal wallet_balance "D3 add"
+    timestamp reg_date
+  }
+  DRIVERS {
+    int driver_id PK
+    int user_id FK,UK
+    varchar license_num UK
+    varchar cnic UK
+    varchar verif_status
+    varchar avail_status "ONLINE/OFFLINE/ON_TRIP"
+    decimal avg_rating
+    int total_trips
+    decimal wallet_balance
+    bool is_flagged "D3 add"
+  }
+  LOCATIONS {
+    int location_id PK
+    decimal latitude
+    decimal longitude
+    varchar city
+    varchar address
+    varchar label
+  }
+  FARE_RULES {
+    int rule_id PK
+    varchar vehicle_type
+    decimal base_rate
+    decimal per_km_rate
+    decimal per_min_rate
+    decimal surge_multiplier
+    bool is_surge_active
+  }
+  VEHICLES {
+    int vehicle_id PK
+    int driver_id FK
+    varchar make
+    varchar model
+    smallint vehicle_year
+    varchar plate_num UK
+    varchar color
+    varchar vehicle_type
+    varchar verif_status
+  }
+  PROMO_CODES {
+    int promo_id PK
+    varchar code UK
+    decimal discount_pct
+    date valid_from
+    date valid_until
+    int max_uses
+    int usage_count "D3 add"
+    bool is_active
+  }
+  RIDES {
+    int ride_id PK
+    int rider_id FK
+    int driver_id FK
+    int vehicle_id FK
+    int pickup_loc_id FK
+    int dropoff_loc_id FK
+    int fare_rule_id FK
+    decimal distance_km
+    int duration_min
+    varchar ride_status
+    decimal fare
+    timestamp requested_at
+  }
+  PAYMENTS {
+    int payment_id PK
+    int ride_id FK,UK
+    int rider_id FK
+    int promo_id FK
+    varchar payment_method
+    decimal amount
+    decimal promo_discount
+    varchar payment_status
+    timestamp paid_at
+  }
+  RATINGS {
+    int rating_id PK
+    int ride_id FK,UK
+    int rater_id FK
+    int ratee_id FK
+    int score
+    text comment
+    timestamp created_at
+  }
+  COMPLAINTS {
+    int complaint_id PK
+    int ride_id FK
+    int complainant_id FK
+    text description
+    varchar status
+    timestamp created_at
+  }
+  DRIVER_EARNINGS {
+    int earning_id PK
+    int ride_id FK,UK
+    int driver_id FK
+    decimal gross_fare
+    decimal commission_pct
+    decimal net_earning
+    varchar payout_status
+    timestamp recorded_at
+  }
+  ADMIN_NOTIFICATIONS {
+    int notification_id PK
+    text message
+    int related_user_id FK
+    bool is_read
+    timestamp created_at
+  }

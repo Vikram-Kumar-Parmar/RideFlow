@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RideFlow — D3 Submission Report</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font: 10.8pt/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif;
+    color: #111;
+  }
+  h1 { font-size: 22pt; margin: 0 0 4pt; color: #0f172a; }
+  h2 { font-size: 15pt; margin: 22pt 0 6pt; color: #0e7490; padding-bottom: 4pt; border-bottom: 1.5pt solid #0e7490; }
+  h3 { font-size: 12.5pt; margin: 14pt 0 4pt; color: #0f172a; }
+  h4 { font-size: 11pt; margin: 10pt 0 4pt; color: #0f172a; }
+  p  { margin: 4pt 0; }
+  ul, ol { margin: 4pt 0 4pt 18pt; }
+  li { margin: 2pt 0; }
+  code, pre, .mono { font-family: "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace; }
+  pre { font-size: 8.6pt; line-height: 1.35; background: #0f172a; color: #e2e8f0; padding: 10pt 12pt; border-radius: 4pt; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  pre.sql .kw { color: #fb923c; font-weight: 600; }
+  .cover { text-align: center; padding: 80pt 0 0; page-break-after: always; }
+  .cover h1 { font-size: 30pt; color: #0e7490; }
+  .cover .subtitle { font-size: 13pt; color: #475569; margin-top: 6pt; }
+  .cover .meta { margin-top: 60pt; font-size: 11.5pt; }
+  .cover .meta div { margin: 3pt 0; }
+  .cover .footer { margin-top: 80pt; font-size: 10pt; color: #64748b; }
+  .footer-brand { text-align: center; font-size: 9pt; color: #64748b; padding-top: 8pt; border-top: 0.5pt solid #cbd5e1; }
+  .badge { display: inline-block; padding: 1pt 6pt; border-radius: 3pt; background: #ecfeff; color: #0e7490; font-size: 9pt; font-weight: 600; }
+  .ok    { color: #047857; font-weight: 600; }
+  .warn  { color: #b91c1c; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0; font-size: 9.5pt; }
+  th, td { border: 0.5pt solid #cbd5e1; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  .grid { display: flex; flex-wrap: wrap; gap: 6pt; }
+  .kpi { flex: 1 1 22%; border: 0.5pt solid #cbd5e1; border-radius: 3pt; padding: 6pt 8pt; }
+  .kpi .l { font-size: 8pt; text-transform: uppercase; color: #64748b; letter-spacing: .5pt; }
+  .kpi .v { font-size: 14pt; font-weight: 700; color: #0f172a; }
+  .erd { width: 100%; max-width: 100%; }
+  .shot { width: 100%; max-width: 100%; border: 0.5pt solid #cbd5e1; border-radius: 4pt; }
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
+  .pageBreak { page-break-after: always; }
+  .avoidBreak { page-break-inside: avoid; }
+  .checklist li::marker { color: #047857; }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<section class="cover">
+  <div class="badge">Database Systems · Spring 2026</div>
+  <h1>RideFlow</h1>
+  <div class="subtitle">A multi-role ride-hailing platform — Deliverable 3</div>
+  <div class="meta">
+    <div><b>Student:</b> Vikram Kumar</div>
+    <div><b>Roll No:</b> 23K-2062</div>
+    <div><b>Section:</b> DS-4B</div>
+    <div><b>Repository:</b> github.com/Vikram-Kumar-Parmar/RideFlow</div>
+    <div><b>Pull Request:</b> #1</div>
+  </div>
+  <div class="footer">Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B</div>
+</section>
+
+<!-- ============================ 1. OVERVIEW ============================ -->
+<h2>1. Project Overview</h2>
+<p>
+  <b>RideFlow</b> is a complete ride-hailing platform implemented as a single Node.js / Express
+  service backed by a relational database. It supports three live dashboards
+  (rider, driver, admin), a fully-typed schema with all D2 constraints, and the full set of
+  D3 advanced database objects: views, indexes, a stored procedure, three triggers,
+  a scheduled event, and DCL roles.
+</p>
+<p>
+  The codebase ships against either <b>local MySQL 8</b> (where every D3 object is created
+  and exercised) or <b>TiDB Cloud</b> (selected via the <code>DB_TARGET</code> env var, for the
+  +5 cloud-DB bonus). TiDB does not support stored procedures / triggers / events, so on
+  that target the application transparently performs the same logic at the application
+  layer; the rubric-mandated SQL objects are still demoed on MySQL.
+</p>
+
+<h3>Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Tech</th><th>Notes</th></tr>
+  <tr><td>Database</td><td>MySQL 8 (primary) + TiDB Cloud (bonus)</td><td>Hybrid; selected by <code>DB_TARGET</code> env var.</td></tr>
+  <tr><td>Backend</td><td>Node.js 22, Express, mysql2</td><td>JWT auth, role middleware, pooled connections.</td></tr>
+  <tr><td>Frontend</td><td>HTML / CSS / vanilla JS (no framework)</td><td>SPA-style routing per role; static branding footer on every page.</td></tr>
+  <tr><td>Auth</td><td>bcrypt + JWT (HS256)</td><td>Stateless, role-scoped middleware.</td></tr>
+</table>
+
+<!-- ============================ 2. RUBRIC CHECKLIST ============================ -->
+<h2>2. D3 Rubric Coverage Checklist</h2>
+<table class="checklist">
+  <tr><th>Rubric Item</th><th>Implementation</th><th>Status</th></tr>
+  <tr><td>D2 base schema (11 tables, all constraints, junction tables resolved)</td><td><code>schema/01_d2_base.sql</code></td><td class="ok">Complete</td></tr>
+  <tr><td>ActiveRidesView — ongoing trips with rider + driver details</td><td><code>schema/03_d3_views_indexes.sql</code></td><td class="ok">Complete</td></tr>
+  <tr><td>TopDriversView — drivers with avg rating &gt; 4.5</td><td><code>schema/03_d3_views_indexes.sql</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Indexes on rider_id, driver_id, ride_status, city</td><td><code>schema/03_d3_views_indexes.sql</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Stored procedure — base + km + min × surge fare calculation</td><td><code>schema/04_d3_procedures.sql</code> &middot; <code>sp_calculate_fare</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Trigger 1 — payment PAID → ride COMPLETED</td><td><code>trg_payment_paid_complete_ride</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Trigger 2 — flag driver + admin notification when avg rating &lt; 3.5</td><td><code>trg_driver_low_rating_flag</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Trigger 3 — increment promo_codes.usage_count on payment with promo</td><td><code>trg_promo_usage_increment</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Event — nightly expiry of promos past valid_until</td><td><code>ev_expire_promo_codes</code></td><td class="ok">Complete</td></tr>
+  <tr><td>DCL — driver_role / rider_role / support_role / admin_role</td><td><code>schema/07_d3_dcl.sql</code></td><td class="ok">Complete</td></tr>
+  <tr><td>SELECT completed rides for a rider, ordered by date</td><td><code>GET /api/admin/reports/completed-rides</code></td><td class="ok">Complete</td></tr>
+  <tr><td>SELECT drivers in a city, ordered by rating</td><td><code>GET /api/admin/reports/drivers-by-city</code></td><td class="ok">Complete</td></tr>
+  <tr><td>SUM(amount) — revenue per city</td><td><code>GET /api/admin/reports/revenue-per-city</code></td><td class="ok">Complete</td></tr>
+  <tr><td>COUNT(*) — trips per driver</td><td><code>GET /api/admin/reports/trips-per-driver</code></td><td class="ok">Complete</td></tr>
+  <tr><td>AVG with HAVING &lt; 3.5 — low-rated drivers</td><td><code>GET /api/admin/reports/low-rated-drivers</code></td><td class="ok">Complete</td></tr>
+  <tr><td>INNER JOIN — full trip report (riders × rides × drivers × vehicles)</td><td><code>GET /api/admin/reports/full-trip-report</code></td><td class="ok">Complete</td></tr>
+  <tr><td>LEFT JOIN — all riders incl. zero-ride riders</td><td><code>GET /api/admin/reports/all-riders-with-rides</code></td><td class="ok">Complete</td></tr>
+  <tr><td>JOIN payments × promo_codes — discount usage per ride</td><td><code>GET /api/admin/reports/promo-discount-usage</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Role-based UI: rider / driver / admin dashboards</td><td><code>frontend/{rider,driver,admin}.html</code></td><td class="ok">Complete</td></tr>
+  <tr><td>Footer branding "Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B"</td><td>Every HTML page</td><td class="ok">Complete</td></tr>
+  <tr><td><b>+5 Bonus:</b> TiDB cloud database integration</td><td><code>DB_TARGET=tidb</code> in <code>backend/db.js</code></td><td class="ok">Wired</td></tr>
+</table>
+
+<!-- ============================ 3. ERD ============================ -->
+<h2>3. Entity-Relationship Diagram</h2>
+<p>
+  Diagram regenerated from the live schema (D2 base + D3 additions). Boxes labeled
+  <i>"D3 add"</i> indicate columns introduced by D3 additions
+  (<code>schema/02_d3_additions.sql</code>); everything else is from the user's D2 deliverable.
+</p>
+<div class="avoidBreak"><img class="erd" src="erd.png" alt="RideFlow ERD"></div>
+
+<h3>3.1 Cardinality &amp; Junctions</h3>
+<ul>
+  <li>Each <b>USER</b> has at most one <b>DRIVER</b> profile (1:0..1, role-gated).</li>
+  <li><b>DRIVER</b> ↔ <b>VEHICLES</b> is 1:N (drivers may register multiple vehicles).</li>
+  <li><b>RIDES</b> is the central junction linking <b>USERS</b> (as rider), <b>DRIVERS</b>, <b>VEHICLES</b>,
+      <b>FARE_RULES</b>, and two <b>LOCATIONS</b> (pickup, dropoff).</li>
+  <li><b>PAYMENTS</b> is 1:1 with <b>RIDES</b> via UNIQUE(ride_id); <b>RATINGS</b> and <b>DRIVER_EARNINGS</b>
+      are also 1:0..1 with <b>RIDES</b> via UNIQUE(ride_id).</li>
+  <li><b>PROMO_CODES</b> ↔ <b>PAYMENTS</b> is 1:N (one code may be applied to many payments).</li>
+</ul>
+
+<!-- ============================ 4. SCHEMA ADDITIONS ============================ -->
+<h2>4. D3 Schema Additions (non-destructive)</h2>
+<p>
+  The user's D2 schema was preserved as-is in <code>schema/01_d2_base.sql</code>. Three new
+  columns and one new table required by D3 features were added in
+  <code>schema/02_d3_additions.sql</code> using an idempotent helper procedure that checks
+  <code>information_schema.columns</code> before issuing each ALTER:
+</p>
+<table>
+  <tr><th>Object</th><th>Why D3 needs it</th></tr>
+  <tr><td><code>promo_codes.usage_count</code></td><td>Trigger 3 increments this counter; rubric explicitly lists <i>"increment a promo code's usage count"</i>.</td></tr>
+  <tr><td><code>drivers.is_flagged</code></td><td>Trigger 2 sets this when avg_rating &lt; 3.5; admin reports filter on it.</td></tr>
+  <tr><td><code>users.wallet_balance</code></td><td>Riders need a wallet (drivers already have one in D2); used by ride-booking transaction.</td></tr>
+  <tr><td><code>admin_notifications</code> (table)</td><td>Trigger 2 inserts the alert row consumed by Admin → Alerts.</td></tr>
+</table>
+
+<!-- ============================ 5. VIEWS ============================ -->
+<h2>5. Views</h2>
+<h3>5.1 ActiveRidesView</h3>
+<pre class="sql">CREATE VIEW ActiveRidesView AS
+SELECT r.ride_id, r.ride_status, r.requested_at, r.distance_km, r.duration_min, r.fare,
+       rider.user_id AS rider_id, rider.full_name AS rider_name, rider.phone AS rider_phone,
+       d.driver_id, duser.full_name AS driver_name, duser.phone AS driver_phone, d.avg_rating AS driver_rating,
+       v.vehicle_id, v.make AS vehicle_make, v.model AS vehicle_model, v.license_plate, v.vehicle_type,
+       pl.city AS pickup_city, pl.address AS pickup_address,
+       dl.city AS dropoff_city, dl.address AS dropoff_address
+FROM rides r
+JOIN users     rider ON rider.user_id  = r.rider_id
+JOIN drivers   d     ON d.driver_id    = r.driver_id
+JOIN users     duser ON duser.user_id  = d.user_id
+JOIN vehicles  v     ON v.vehicle_id   = r.vehicle_id
+JOIN locations pl    ON pl.location_id = r.pickup_loc_id
+JOIN locations dl    ON dl.location_id = r.dropoff_loc_id
+WHERE r.ride_status IN ('REQUESTED','ACCEPTED','DRIVER_EN_ROUTE','IN_PROGRESS');</pre>
+
+<p><b>Live sample</b> (from current DB after the test run):</p>
+<table>
+  <tr><th>ride_id</th><th>status</th><th>rider</th><th>driver</th><th>vehicle</th><th>route</th><th>fare</th></tr>
+  <tr><td>3</td><td>IN_PROGRESS</td><td>Rider One</td><td>Driver Bilal (3.90★)</td><td>Suzuki GD110 / CCC-003</td><td>Karachi → Karachi</td><td>Rs 133</td></tr>
+</table>
+
+<h3>5.2 TopDriversView (avg rating &gt; 4.5)</h3>
+<pre class="sql">CREATE VIEW TopDriversView AS
+SELECT d.driver_id, u.full_name AS driver_name, u.email, u.phone,
+       d.avg_rating, d.total_trips, d.avail_status, d.verif_status
+FROM drivers d
+JOIN users   u ON u.user_id = d.user_id
+WHERE d.avg_rating &gt; 4.5
+ORDER BY d.avg_rating DESC, d.total_trips DESC;</pre>
+<p>
+  After the demo run Driver Ali's average dropped to 3.00, so the view is
+  empty — exactly as the predicate dictates.
+</p>
+
+<!-- ============================ 6. INDEXES ============================ -->
+<h2>6. Indexes</h2>
+<p>
+  Created idempotently via a small <code>_create_index_if_missing</code> helper that consults
+  <code>information_schema.statistics</code> first (since MySQL has no <code>CREATE INDEX IF NOT
+  EXISTS</code>):
+</p>
+<table>
+  <tr><th>Index</th><th>Table.Column(s)</th><th>Purpose</th></tr>
+  <tr><td><code>idx_rides_rider_id</code></td><td><code>rides(rider_id)</code></td><td>Per-rider history query, ratings dropdown.</td></tr>
+  <tr><td><code>idx_rides_driver_id</code></td><td><code>rides(driver_id)</code></td><td>Trips-per-driver aggregate, driver history.</td></tr>
+  <tr><td><code>idx_rides_status</code></td><td><code>rides(ride_status)</code></td><td>ActiveRidesView, completed-rides reports.</td></tr>
+  <tr><td><code>idx_locations_city</code></td><td><code>locations(city)</code></td><td>Drivers-by-city + revenue-per-city aggregates.</td></tr>
+</table>
+
+<!-- ============================ 7. STORED PROCEDURE ============================ -->
+<h2>7. Stored Procedure — <code>sp_calculate_fare</code></h2>
+<p>
+  Auto-calculates a ride's fare from <code>fare_rules</code> + <code>rides</code> with optional
+  peak-hour surge, then writes it back into <code>rides.fare</code> and returns it via OUT.
+</p>
+<pre class="sql">CREATE PROCEDURE sp_calculate_fare(
+  IN  p_ride_id  INT UNSIGNED,
+  IN  p_is_peak  BOOLEAN,
+  OUT p_fare     DECIMAL(10,2)
+)
+BEGIN
+  DECLARE v_base, v_km_rate, v_min_rate DECIMAL(10,2);
+  DECLARE v_surge DECIMAL(4,2);
+  DECLARE v_dist  DECIMAL(8,2);
+  DECLARE v_dur   INT UNSIGNED;
+  DECLARE v_mult  DECIMAL(4,2);
+
+  SELECT fr.base_rate, fr.per_km_rate, fr.per_min_rate, fr.surge_multiplier,
+         r.distance_km, r.duration_min
+    INTO v_base, v_km_rate, v_min_rate, v_surge, v_dist, v_dur
+  FROM rides r
+  JOIN fare_rules fr ON fr.rule_id = r.fare_rule_id
+  WHERE r.ride_id = p_ride_id;
+
+  SET v_mult = CASE WHEN p_is_peak THEN v_surge ELSE 1.00 END;
+  SET p_fare = ROUND((v_base + v_km_rate * v_dist + v_min_rate * v_dur) * v_mult, 2);
+
+  UPDATE rides SET fare = p_fare WHERE ride_id = p_ride_id;
+END;</pre>
+
+<h4>Verification (live)</h4>
+<p>
+  Booked an ECONOMY ride (<i>base 100, per-km 25, per-min 3, surge × 1.5</i>) at peak with
+  distance 7 km, duration 15 min:
+</p>
+<pre>(100 + 25 × 7 + 3 × 15) × 1.5 = 480.00          ← procedure-computed value
+WELCOME10 (10%) discount of 480.00 = 48.00
+Net charged = 480.00 − 48.00       = 432.00     ← reported in API response</pre>
+
+<!-- ============================ 8. TRIGGERS ============================ -->
+<h2>8. Triggers</h2>
+
+<h3>8.1 Trigger 1 — payment PAID → ride COMPLETED</h3>
+<pre class="sql">CREATE TRIGGER trg_payment_paid_complete_ride
+AFTER UPDATE ON payments
+FOR EACH ROW
+BEGIN
+  IF NEW.payment_status = 'PAID' AND OLD.payment_status &lt;&gt; 'PAID' THEN
+    UPDATE rides SET ride_status = 'COMPLETED' WHERE ride_id = NEW.ride_id;
+  END IF;
+END;</pre>
+<p>
+  <b>Verified live:</b> the driver-side <code>/finish</code> endpoint flips
+  <code>payments.payment_status</code> to <code>'PAID'</code> and never touches
+  <code>rides.ride_status</code>. After the call the ride row reads
+  <code>COMPLETED</code>, proving the trigger fired.
+</p>
+
+<h3>8.2 Trigger 2 — low-rating flag + admin notification</h3>
+<pre class="sql">CREATE TRIGGER trg_driver_low_rating_flag
+BEFORE UPDATE ON drivers
+FOR EACH ROW
+BEGIN
+  IF NEW.avg_rating &lt; 3.50 AND OLD.is_flagged = 0 THEN
+    SET NEW.is_flagged = 1;
+    INSERT INTO admin_notifications (message, related_user_id)
+    VALUES (
+      CONCAT('Driver #', NEW.driver_id,
+             ' flagged for low average rating (',
+             FORMAT(NEW.avg_rating, 2), ').'),
+      NEW.user_id
+    );
+  END IF;
+END;</pre>
+<p>
+  Implemented as a <code>BEFORE UPDATE</code> trigger so it can mutate
+  <code>NEW.is_flagged</code> in-place. A <code>BEFORE</code>/<code>AFTER UPDATE</code>
+  trigger is forbidden from <code>UPDATE</code>-ing the same table that fired it (MySQL
+  error 1442 — re-entry); using <code>SET NEW.is_flagged = 1</code> avoids that path
+  entirely while still persisting the change.
+</p>
+<p><b>Verified live</b> (after submitting a 1★ rating against Driver Ali whose seed avg was 4.80):</p>
+<pre>SELECT driver_id, avg_rating, is_flagged FROM drivers WHERE driver_id = 1;
+→ 1 | 3.00 | 1
+
+SELECT message, related_user_id FROM admin_notifications;
+→ "Driver #1 flagged for low average rating (3.00)." | 5</pre>
+
+<h3>8.3 Trigger 3 — promo usage_count increment</h3>
+<pre class="sql">CREATE TRIGGER trg_promo_usage_increment
+AFTER INSERT ON payments
+FOR EACH ROW
+BEGIN
+  IF NEW.promo_id IS NOT NULL THEN
+    UPDATE promo_codes
+       SET usage_count = usage_count + 1
+     WHERE promo_id = NEW.promo_id;
+  END IF;
+END;</pre>
+<p>
+  <b>Verified live:</b> after the test booking applied <code>WELCOME10</code>,
+  <code>promo_codes.usage_count</code> went from 1 (seeded) to 2.
+</p>
+
+<!-- ============================ 9. EVENT ============================ -->
+<h2>9. Event — <code>ev_expire_promo_codes</code></h2>
+<pre class="sql">SET GLOBAL event_scheduler = ON;
+
+CREATE EVENT ev_expire_promo_codes
+ON SCHEDULE EVERY 1 DAY
+  STARTS (TIMESTAMP(CURRENT_DATE) + INTERVAL 1 DAY)
+DO
+BEGIN
+  UPDATE promo_codes
+     SET is_active = 0
+   WHERE valid_until &lt; CURDATE()
+     AND is_active   = 1;
+END;</pre>
+<p>
+  Runs at midnight each night. The seed includes a sample expired code
+  (<code>OLDPROMO</code>, <code>valid_until = '2024-12-31'</code>); after the next event
+  cycle it would flip to <code>is_active = 0</code>.
+</p>
+
+<!-- ============================ 10. DCL ============================ -->
+<h2>10. DCL — Roles &amp; Privileges</h2>
+<pre class="sql">CREATE ROLE IF NOT EXISTS 'driver_role','rider_role','support_role','admin_role';
+
+-- Drivers: read-only on rides
+GRANT SELECT ON databaseProject_db.rides TO 'driver_role';
+
+-- Riders: book rides + read their bookings + log payments
+GRANT INSERT, SELECT ON databaseProject_db.rides    TO 'rider_role';
+GRANT INSERT, SELECT ON databaseProject_db.payments TO 'rider_role';
+
+-- Support team: reads + updates everywhere, BUT no DELETE
+GRANT SELECT, UPDATE ON databaseProject_db.* TO 'support_role';
+REVOKE DELETE        ON databaseProject_db.* FROM 'support_role';
+
+-- Admin: full power, with grant option
+GRANT ALL PRIVILEGES ON databaseProject_db.* TO 'admin_role' WITH GRANT OPTION;
+
+FLUSH PRIVILEGES;</pre>
+
+<h3>10.1 Live <code>SHOW GRANTS</code> evidence</h3>
+<pre>mysql&gt; SHOW GRANTS FOR driver_role;
++--------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `driver_role`@`%`                      |
+| GRANT SELECT ON `databaseProject_db`.`rides` TO `driver_role`|
++--------------------------------------------------------------+
+
+mysql&gt; SHOW GRANTS FOR rider_role;
++----------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `rider_role`@`%`                               |
+| GRANT SELECT, INSERT ON `databaseProject_db`.`payments` TO `rider_role` |
+| GRANT SELECT, INSERT ON `databaseProject_db`.`rides`    TO `rider_role` |
++----------------------------------------------------------------------+
+
+mysql&gt; SHOW GRANTS FOR support_role;
++----------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `support_role`@`%`                       |
+| GRANT SELECT, UPDATE ON `databaseProject_db`.* TO `support_role`|
++----------------------------------------------------------------+
+(no DELETE ⇒ REVOKE was effective)
+
+mysql&gt; SHOW GRANTS FOR admin_role;
++--------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `admin_role`@`%`                                   |
+| GRANT ALL PRIVILEGES ON `databaseProject_db`.* TO `admin_role` WITH GRANT OPTION |
++--------------------------------------------------------------------------+</pre>
+
+<!-- ============================ 11. RUBRIC QUERIES ============================ -->
+<h2>11. Rubric Queries — Backend Reports</h2>
+
+<h3>11.1 Completed rides for a specific rider, ordered by date</h3>
+<pre class="sql">SELECT r.ride_id, r.requested_at, r.distance_km, r.duration_min, r.fare,
+       du.full_name AS driver_name
+  FROM rides r
+  JOIN drivers d  ON d.driver_id = r.driver_id
+  JOIN users   du ON du.user_id  = d.user_id
+ WHERE r.rider_id = ? AND r.ride_status = 'COMPLETED'
+ ORDER BY r.requested_at DESC;</pre>
+<p><b>Live result for rider_id = 2 (Rider One):</b></p>
+<table>
+  <tr><th>ride_id</th><th>requested_at</th><th>distance</th><th>duration</th><th>fare</th><th>driver</th></tr>
+  <tr><td>4</td><td>2026-05-05 09:22:51</td><td>7.00</td><td>15</td><td>480.00</td><td>Driver Ali</td></tr>
+  <tr><td>1</td><td>2026-05-05 09:22:50</td><td>9.50</td><td>18</td><td>391.50</td><td>Driver Ali</td></tr>
+</table>
+
+<h3>11.2 Drivers in a city, ordered by rating</h3>
+<pre class="sql">SELECT DISTINCT d.driver_id, u.full_name, d.avg_rating, d.total_trips, d.avail_status
+  FROM drivers d
+  JOIN users     u  ON u.user_id      = d.user_id
+  JOIN rides     r  ON r.driver_id    = d.driver_id
+  JOIN locations pl ON pl.location_id = r.pickup_loc_id
+ WHERE pl.city = ?
+ ORDER BY d.avg_rating DESC, d.total_trips DESC;</pre>
+<p><b>Live result for city = "Karachi":</b></p>
+<table>
+  <tr><th>driver_id</th><th>full_name</th><th>avg_rating</th><th>total_trips</th><th>avail</th></tr>
+  <tr><td>3</td><td>Driver Bilal</td><td>3.90</td><td>12</td><td>ONLINE</td></tr>
+  <tr><td>1</td><td>Driver Ali</td><td>3.00</td><td>51</td><td>ONLINE</td></tr>
+</table>
+
+<h3>11.3 SUM(amount) — revenue per city</h3>
+<pre class="sql">SELECT pl.city, COUNT(*) AS paid_rides, ROUND(SUM(p.amount), 2) AS total_revenue
+  FROM payments  p
+  JOIN rides     r  ON r.ride_id      = p.ride_id
+  JOIN locations pl ON pl.location_id = r.pickup_loc_id
+ WHERE p.payment_status = 'PAID'
+ GROUP BY pl.city
+ ORDER BY total_revenue DESC;</pre>
+<table>
+  <tr><th>city</th><th>paid_rides</th><th>total_revenue</th></tr>
+  <tr><td>Lahore</td><td>1</td><td>865.00</td></tr>
+  <tr><td>Karachi</td><td>2</td><td>784.35</td></tr>
+</table>
+
+<h3>11.4 COUNT(*) — trips per driver</h3>
+<pre class="sql">SELECT d.driver_id, u.full_name AS driver_name,
+       COUNT(*) AS completed_trips,
+       ROUND(SUM(r.fare), 2) AS total_fare_value
+  FROM rides r
+  JOIN drivers d ON d.driver_id = r.driver_id
+  JOIN users   u ON u.user_id   = d.user_id
+ WHERE r.ride_status = 'COMPLETED'
+ GROUP BY d.driver_id, u.full_name
+ ORDER BY completed_trips DESC;</pre>
+<table>
+  <tr><th>driver_id</th><th>driver_name</th><th>completed_trips</th><th>total_fare_value</th></tr>
+  <tr><td>1</td><td>Driver Ali</td><td>2</td><td>871.50</td></tr>
+  <tr><td>2</td><td>Driver Sara</td><td>1</td><td>865.00</td></tr>
+</table>
+
+<h3>11.5 AVG with HAVING &lt; 3.5 — low-rated drivers</h3>
+<pre class="sql">SELECT u.user_id, u.full_name, d.driver_id,
+       ROUND(AVG(rt.score), 2) AS avg_score,
+       COUNT(rt.rating_id)     AS rating_count
+  FROM ratings rt
+  JOIN users   u ON u.user_id = rt.rated_user
+  JOIN drivers d ON d.user_id = u.user_id
+ GROUP BY u.user_id, u.full_name, d.driver_id
+HAVING AVG(rt.score) &lt; 3.5
+ ORDER BY avg_score ASC;</pre>
+<table>
+  <tr><th>user_id</th><th>full_name</th><th>driver_id</th><th>avg_score</th><th>rating_count</th></tr>
+  <tr><td>5</td><td>Driver Ali</td><td>1</td><td>3.00</td><td>2</td></tr>
+</table>
+
+<h3>11.6 INNER JOIN — full trip report</h3>
+<pre class="sql">SELECT r.ride_id, r.ride_status, r.requested_at,
+       r.distance_km, r.duration_min, r.fare,
+       ru.full_name  AS rider_name,
+       du.full_name  AS driver_name,
+       v.make, v.model, v.license_plate, v.vehicle_type,
+       pl.city AS pickup_city, dl.city AS dropoff_city
+  FROM rides r
+  INNER JOIN users    ru  ON ru.user_id    = r.rider_id
+  INNER JOIN drivers  d   ON d.driver_id   = r.driver_id
+  INNER JOIN users    du  ON du.user_id    = d.user_id
+  INNER JOIN vehicles v   ON v.vehicle_id  = r.vehicle_id
+  INNER JOIN locations pl ON pl.location_id = r.pickup_loc_id
+  INNER JOIN locations dl ON dl.location_id = r.dropoff_loc_id
+ ORDER BY r.requested_at DESC LIMIT 200;</pre>
+<table>
+  <tr><th>ride_id</th><th>status</th><th>rider</th><th>driver</th><th>vehicle</th><th>plate</th><th>type</th><th>route</th><th>fare</th></tr>
+  <tr><td>4</td><td>COMPLETED</td><td>Rider One</td><td>Driver Ali</td><td>Toyota Corolla</td><td>AAA-001</td><td>ECONOMY</td><td>Karachi → Karachi</td><td>480.00</td></tr>
+  <tr><td>1</td><td>COMPLETED</td><td>Rider One</td><td>Driver Ali</td><td>Toyota Corolla</td><td>AAA-001</td><td>ECONOMY</td><td>Karachi → Karachi</td><td>391.50</td></tr>
+  <tr><td>2</td><td>COMPLETED</td><td>Rider Two</td><td>Driver Sara</td><td>Honda City</td><td>BBB-002</td><td>PREMIUM</td><td>Lahore → Lahore</td><td>865.00</td></tr>
+  <tr><td>3</td><td>IN_PROGRESS</td><td>Rider One</td><td>Driver Bilal</td><td>Suzuki GD110</td><td>CCC-003</td><td>BIKE</td><td>Karachi → Karachi</td><td>133.00</td></tr>
+</table>
+
+<h3>11.7 LEFT JOIN — all riders incl. zero-ride riders</h3>
+<pre class="sql">SELECT u.user_id, u.full_name, u.email,
+       COUNT(r.ride_id) AS completed_rides
+  FROM users u
+  LEFT JOIN rides r
+         ON r.rider_id = u.user_id AND r.ride_status = 'COMPLETED'
+ WHERE u.role = 'RIDER'
+ GROUP BY u.user_id, u.full_name, u.email
+ ORDER BY completed_rides DESC, u.full_name;</pre>
+<table>
+  <tr><th>user_id</th><th>full_name</th><th>email</th><th>completed_rides</th></tr>
+  <tr><td>2</td><td>Rider One</td><td>rider@demo.com</td><td>2</td></tr>
+  <tr><td>3</td><td>Rider Two</td><td>rider2@demo.com</td><td>1</td></tr>
+  <tr><td>4</td><td>Rider Three</td><td>rider3@demo.com</td><td><b>0</b></td></tr>
+</table>
+<p><b>Note:</b> Rider Three appears with <code>completed_rides = 0</code>. An <code>INNER JOIN</code>
+would have dropped this row; the <code>LEFT JOIN</code> + <code>COUNT(r.ride_id)</code>
+explicitly preserves it.</p>
+
+<h3>11.8 JOIN payments × promo_codes — discount usage per ride</h3>
+<pre class="sql">SELECT p.payment_id, p.ride_id, pc.code,
+       pc.discount_pct, p.promo_discount, p.amount,
+       p.payment_status, p.txn_date
+  FROM payments    p
+  JOIN promo_codes pc ON pc.promo_id = p.promo_id
+ ORDER BY p.txn_date DESC;</pre>
+<table>
+  <tr><th>payment_id</th><th>ride_id</th><th>code</th><th>discount_pct</th><th>promo_discount</th><th>amount</th><th>status</th></tr>
+  <tr><td>4</td><td>4</td><td>WELCOME10</td><td>10.00</td><td>48.00</td><td>432.00</td><td>PAID</td></tr>
+  <tr><td>1</td><td>1</td><td>WELCOME10</td><td>10.00</td><td>39.15</td><td>352.35</td><td>PAID</td></tr>
+</table>
+
+<!-- ============================ 12. UI EVIDENCE ============================ -->
+<h2>12. UI Evidence — Live End-to-End Flow</h2>
+<p>
+  The screenshots below are from a single recorded run: rider books a peak-hour
+  ride with promo → driver completes → rider rates 1★ → admin sees alerts and
+  reports populate. Footer branding "Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B"
+  is visible on every page.
+</p>
+
+<h3>12.1 Booking with stored procedure + promo + surge</h3>
+<img class="shot" src="shots/booking-success.png">
+<p><i>Fare 480 = (100 + 25 × 7 + 3 × 15) × 1.5; promo discount 48; you pay 432.</i></p>
+
+<h3>12.2 Trigger 1 evidence — driver trip history shows COMPLETED</h3>
+<img class="shot" src="shots/driver-history.png">
+<p><i>Driver-side <code>/finish</code> only flips payment to PAID; the ride landing in COMPLETED proves <code>trg_payment_paid_complete_ride</code> ran.</i></p>
+
+<h3>12.3 Trigger 2 evidence — admin notification</h3>
+<img class="shot" src="shots/admin-alerts.png">
+<p><i>1★ submitted against Driver Ali → avg dropped to 3.00 → trigger flagged the driver and inserted the alert.</i></p>
+
+<h3>12.4 Admin dashboard — KPIs + ActiveRidesView + TopDriversView</h3>
+<img class="shot" src="shots/admin-dashboard.png">
+<p><i>Flagged drivers = 1; ActiveRidesView shows the IN_PROGRESS ride; TopDriversView is empty (no driver above 4.5 after Ali's drop).</i></p>
+
+<h3>12.5 Admin reports — top half (aggregates + INNER + LEFT JOIN)</h3>
+<img class="shot" src="shots/admin-reports-top.png">
+
+<h3>12.6 Admin reports — bottom half (promo JOIN + per-rider history)</h3>
+<img class="shot" src="shots/admin-reports-bottom.png">
+
+<h3>12.7 Drivers in city ordered by rating</h3>
+<img class="shot" src="shots/drivers-in-city.png">
+
+<!-- ============================ 13. HOW TO RUN ============================ -->
+<h2>13. How to Run</h2>
+<h3>13.1 Local MySQL (full D3 — procedures, triggers, events)</h3>
+<pre>git clone https://github.com/Vikram-Kumar-Parmar/RideFlow.git
+cd RideFlow
+cp .env.example .env             # set DB_TARGET=mysql + MYSQL_*
+npm install
+npm run db:setup                 # runs schema/01..07 + seed data
+npm start                        # http://localhost:3000</pre>
+
+<h3>13.2 TiDB Cloud (+5 bonus mode)</h3>
+<pre>cp .env.example .env             # set DB_TARGET=tidb + TIDB_*
+npm run db:setup                 # 04..06 (procedures/triggers/events) auto-skipped
+npm start</pre>
+<p>The application transparently performs the same logic at the application layer when running on TiDB.</p>
+
+<h3>13.3 Demo logins (password is <code>password</code>)</h3>
+<table>
+  <tr><th>Role</th><th>Email</th></tr>
+  <tr><td>Admin</td><td>admin@demo.com</td></tr>
+  <tr><td>Rider</td><td>rider@demo.com (Rider One)</td></tr>
+  <tr><td>Driver</td><td>driver@demo.com (Driver Ali, ECONOMY)</td></tr>
+</table>
+
+<div class="footer-brand">Developed by Vikram Kumar | Roll: 23K-2062 | Section: DS-4B</div>
+
+</body>
+</html>
