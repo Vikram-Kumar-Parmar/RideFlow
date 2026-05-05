@@ -32,7 +32,11 @@ app.use((err, req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Server error' });
 });
 
-const PORT = Number(process.env.PORT || 3000);
-app.listen(PORT, () => {
-  console.log(`RideFlow listening on http://localhost:${PORT} (db_target=${target})`);
-});
+if (require.main === module) {
+  const PORT = Number(process.env.PORT || 3000);
+  app.listen(PORT, () => {
+    console.log(`RideFlow listening on http://localhost:${PORT} (db_target=${target})`);
+  });
+}
+
+module.exports = app;

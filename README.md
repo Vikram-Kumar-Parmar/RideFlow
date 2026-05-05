@@ -20,7 +20,7 @@ and access-control roles).
 - Viva preparation keybook: [`docs/KEYBOOK.md`](docs/KEYBOOK.md)
 - ER diagram (auto-generated): [`report/erd.png`](report/erd.png)
 - Deployment guide: [`DEPLOY.md`](DEPLOY.md)
-- Live preview URL: [https://rideflow-app.fly.dev](https://rideflow-app.fly.dev)
+- **Live URL**: [https://rideflow-tau.vercel.app](https://rideflow-tau.vercel.app) (deployed on Vercel, backed by TiDB Cloud)
 
 ## Project layout
 
