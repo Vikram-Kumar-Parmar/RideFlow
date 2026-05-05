@@ -45,9 +45,6 @@ em { color: #475569; }
   <div class="badge">Database Systems · Spring 2026</div>
   <h1>RideFlow Viva Keybook</h1>
   <div class="subtitle">Demo script, expected questions, and key concepts</div>
-  <div class="team">
-    Vikram Kumar (23K-2062) and Umar Behram (23I-2604) &mdash; Section DS-4B
-  </div>
 </div>
 ${bodyHtml}
 </body></html>`;
