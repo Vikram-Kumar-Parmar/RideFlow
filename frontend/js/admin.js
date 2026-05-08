@@ -16,7 +16,7 @@ tabs.forEach((b) => {
 });
 
 const LOADERS = {
-  dash: loadDash, users: loadUsers, vehicles: loadVehicles,
+  dash: loadDash, users: loadUsers, drivers: loadDrivers, vehicles: loadVehicles,
   fares: loadFares, reports: loadReports, alerts: loadAlerts,
 };
 
@@ -80,6 +80,51 @@ async function loadUsers() {
         await api(`/api/admin/users/${el.dataset.uid}/status`, {
           method: 'PUT', body: JSON.stringify({ acc_status: el.value }),
         });
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+// ---- DRIVERS -----------------------------------------------------
+async function loadDrivers() {
+  const rows = await api('/api/admin/drivers');
+  document.getElementById('driversTable').innerHTML = table(rows, [
+    { h: '#', k: 'driver_id' }, { h: 'Name', k: 'full_name' },
+    { h: 'Email', k: 'email' }, { h: 'Phone', k: 'phone' },
+    { h: 'License', k: 'license_num' }, { h: 'CNIC', k: 'cnic' },
+    { h: 'Avail', f: (r) => `<span class="pill ${r.avail_status === 'ONLINE' ? 'ok' : (r.avail_status === 'ON_TRIP' ? 'warn' : 'bad')}">${escape(r.avail_status)}</span>` },
+    { h: 'Avg', f: (r) => Number(r.avg_rating).toFixed(2) },
+    { h: 'Trips', k: 'total_trips' },
+    { h: 'Flagged', f: (r) => r.is_flagged ? `<span class="pill bad">FLAGGED</span>` : '—' },
+    {
+      h: 'Verification',
+      f: (r) => `
+        <select data-did="${r.driver_id}" class="drv-verif">
+          ${['PENDING','VERIFIED','REJECTED'].map((s) =>
+            `<option ${r.verif_status===s?'selected':''}>${s}</option>`).join('')}
+        </select>`,
+    },
+    {
+      h: 'Action',
+      f: (r) => r.is_flagged
+        ? `<button class="btn secondary drv-unflag" data-did="${r.driver_id}">Unflag</button>`
+        : '',
+    },
+  ], 'No drivers yet — register one from the Sign-up page.');
+  document.querySelectorAll('.drv-verif').forEach((el) => {
+    el.addEventListener('change', async () => {
+      try {
+        await api(`/api/admin/drivers/${el.dataset.did}/verify`, {
+          method: 'PUT', body: JSON.stringify({ verif_status: el.value }),
+        });
+      } catch (e) { alert(e.message); }
+    });
+  });
+  document.querySelectorAll('.drv-unflag').forEach((el) => {
+    el.addEventListener('click', async () => {
+      try {
+        await api(`/api/admin/drivers/${el.dataset.did}/unflag`, { method: 'PUT' });
+        loadDrivers();
       } catch (e) { alert(e.message); }
     });
   });

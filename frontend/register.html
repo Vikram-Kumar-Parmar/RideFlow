@@ -37,10 +37,43 @@
         <div id="driverFields" class="hide">
           <div style="height:8px"></div>
           <label>License #</label>
-          <input name="license_num" />
+          <input name="license_num" placeholder="LIC-XXXX" />
           <div style="height:8px"></div>
           <label>CNIC</label>
           <input name="cnic" placeholder="42101-1234567-1" />
+          <div style="height:14px"></div>
+          <h3 style="margin:0 0 6px 0">Vehicle</h3>
+          <div class="row">
+            <div style="flex:1; min-width:140px">
+              <label>Make</label>
+              <input name="vehicle_make" placeholder="Toyota" />
+            </div>
+            <div style="flex:1; min-width:140px">
+              <label>Model</label>
+              <input name="vehicle_model" placeholder="Corolla" />
+            </div>
+          </div>
+          <div class="row">
+            <div style="width:90px">
+              <label>Year</label>
+              <input name="vehicle_year" type="number" min="1980" max="2100" placeholder="2022" />
+            </div>
+            <div style="flex:1; min-width:120px">
+              <label>Color</label>
+              <input name="vehicle_color" placeholder="White" />
+            </div>
+            <div style="flex:1; min-width:140px">
+              <label>License plate</label>
+              <input name="license_plate" placeholder="ABC-123" />
+            </div>
+          </div>
+          <div style="height:8px"></div>
+          <label>Vehicle type</label>
+          <select name="vehicle_type">
+            <option value="ECONOMY">Economy</option>
+            <option value="PREMIUM">Premium</option>
+            <option value="BIKE">Bike</option>
+          </select>
         </div>
         <div style="height:14px"></div>
         <button class="btn" type="submit" style="width:100%">Sign up</button>
