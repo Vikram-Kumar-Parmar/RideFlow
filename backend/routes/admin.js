@@ -31,6 +31,45 @@ router.put('/users/:id/status', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ----- DRIVER MANAGEMENT (rubric: manage users → drivers + verification)
+router.get('/drivers', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT d.driver_id, d.user_id, u.full_name, u.email, u.phone,
+              d.license_num, d.cnic, d.verif_status, d.avail_status,
+              d.avg_rating, d.total_trips, d.is_flagged, d.wallet_balance
+         FROM drivers d
+         JOIN users u ON u.user_id = d.user_id
+        ORDER BY d.driver_id DESC`
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+router.put('/drivers/:id/verify', async (req, res, next) => {
+  try {
+    const { verif_status } = req.body || {};
+    if (!['PENDING', 'VERIFIED', 'REJECTED'].includes(verif_status)) {
+      return res.status(400).json({ error: 'invalid verif_status' });
+    }
+    await execute(
+      `UPDATE drivers SET verif_status = ? WHERE driver_id = ?`,
+      [verif_status, req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.put('/drivers/:id/unflag', async (req, res, next) => {
+  try {
+    await execute(
+      `UPDATE drivers SET is_flagged = 0 WHERE driver_id = ?`,
+      [req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 router.get('/vehicles', async (req, res, next) => {
   try {
     const rows = await query(
