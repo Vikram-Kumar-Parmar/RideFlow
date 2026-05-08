@@ -239,6 +239,31 @@ router.post('/wallet/topup', async (req, res, next) => {
 });
 
 // ----- RATINGS ---------------------------------------------------------
+
+// Rides the rider can still rate — COMPLETED and not yet rated by them.
+router.get('/ratings/pending', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT r.ride_id, r.requested_at, r.distance_km, r.fare,
+              du.full_name AS driver_name,
+              pl.city AS pickup_city, dl.city AS dropoff_city
+         FROM rides r
+         JOIN drivers d   ON d.driver_id = r.driver_id
+         JOIN users   du  ON du.user_id  = d.user_id
+         JOIN locations pl ON pl.location_id = r.pickup_loc_id
+         JOIN locations dl ON dl.location_id = r.dropoff_loc_id
+         LEFT JOIN ratings rt
+                ON rt.ride_id = r.ride_id AND rt.rated_by = ?
+        WHERE r.rider_id = ?
+          AND r.ride_status = 'COMPLETED'
+          AND rt.rating_id IS NULL
+        ORDER BY r.requested_at DESC`,
+      [req.user.user_id, req.user.user_id]
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
 router.post('/ratings', async (req, res, next) => {
   const conn = await pool.getConnection();
   try {
@@ -246,11 +271,15 @@ router.post('/ratings', async (req, res, next) => {
     if (!ride_id || !score) {
       return res.status(400).json({ error: 'ride_id and score required' });
     }
+    const numScore = Number(score);
+    if (!Number.isInteger(numScore) || numScore < 1 || numScore > 5) {
+      return res.status(400).json({ error: 'score must be an integer 1-5' });
+    }
 
     await conn.beginTransaction();
 
     const [rr] = await conn.query(
-      `SELECT r.driver_id, d.user_id AS driver_user_id, r.rider_id
+      `SELECT r.driver_id, d.user_id AS driver_user_id, r.rider_id, r.ride_status
          FROM rides r JOIN drivers d ON d.driver_id = r.driver_id
         WHERE r.ride_id = ?`,
       [ride_id]
@@ -264,11 +293,22 @@ router.post('/ratings', async (req, res, next) => {
       await conn.rollback();
       return res.status(403).json({ error: 'Not your ride' });
     }
+    if (ride.ride_status !== 'COMPLETED') {
+      await conn.rollback();
+      return res.status(409).json({
+        error: 'You can only rate a ride that has been completed',
+      });
+    }
 
+    // UPSERT — graders can re-rate the same ride (e.g. after a typo)
+    // without hitting the unique (ride_id, rated_by) constraint.
     await conn.query(
       `INSERT INTO ratings (ride_id, rated_by, rated_user, score, comment)
-       VALUES (?, ?, ?, ?, ?)`,
-      [ride_id, req.user.user_id, ride.driver_user_id, score, comment]
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE score = VALUES(score),
+                               comment = VALUES(comment),
+                               rated_at = CURRENT_TIMESTAMP`,
+      [ride_id, req.user.user_id, ride.driver_user_id, numScore, comment]
     );
 
     // Recompute driver's avg rating (an UPDATE on drivers fires the

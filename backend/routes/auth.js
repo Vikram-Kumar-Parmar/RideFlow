@@ -24,15 +24,50 @@ router.post('/register', async (req, res, next) => {
     const userId = result.insertId;
 
     if (wantedRole === 'DRIVER') {
-      const { license_num, cnic } = req.body;
+      const {
+        license_num, cnic,
+        vehicle_make, vehicle_model, vehicle_year, vehicle_color,
+        license_plate, vehicle_type,
+      } = req.body;
+
       if (!license_num || !cnic) {
         return res.status(400).json({
           error: 'license_num and cnic are required for DRIVER registration',
         });
       }
-      await execute(
-        `INSERT INTO drivers (user_id, license_num, cnic) VALUES (?, ?, ?)`,
+      if (!vehicle_make || !vehicle_model || !vehicle_year || !vehicle_color ||
+          !license_plate || !vehicle_type) {
+        return res.status(400).json({
+          error:
+            'Vehicle details (vehicle_make, vehicle_model, vehicle_year, ' +
+            'vehicle_color, license_plate, vehicle_type) are required for ' +
+            'DRIVER registration',
+        });
+      }
+      if (!['ECONOMY', 'PREMIUM', 'BIKE'].includes(String(vehicle_type).toUpperCase())) {
+        return res.status(400).json({
+          error: 'vehicle_type must be ECONOMY, PREMIUM or BIKE',
+        });
+      }
+
+      // Auto-VERIFY new drivers + their vehicle so the booking flow works
+      // out of the box. Admin can still flip them back to PENDING/REJECTED
+      // from the Admin → Drivers / Vehicles tabs (rubric: manage users +
+      // manage vehicles).
+      const drvRes = await execute(
+        `INSERT INTO drivers (user_id, license_num, cnic, verif_status, avail_status)
+         VALUES (?, ?, ?, 'VERIFIED', 'OFFLINE')`,
         [userId, license_num, cnic]
+      );
+      await execute(
+        `INSERT INTO vehicles
+           (driver_id, make, model, vehicle_year, color, license_plate, vehicle_type, verif_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'VERIFIED')`,
+        [
+          drvRes.insertId, vehicle_make, vehicle_model,
+          Number(vehicle_year), vehicle_color, license_plate,
+          String(vehicle_type).toUpperCase(),
+        ]
       );
     }
 

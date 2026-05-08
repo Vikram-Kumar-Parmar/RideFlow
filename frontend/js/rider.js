@@ -105,25 +105,41 @@ document.getElementById('topupForm').addEventListener('submit', async (e) => {
 
 // ---------- RATINGS -----------------------------------------------------
 async function loadRideOptions() {
-  const rows = await api('/api/rider/rides');
-  const completed = rows.filter((r) => r.ride_status === 'COMPLETED');
-  document.getElementById('rateRide').innerHTML = completed.length === 0
-    ? `<option value="">No completed rides yet</option>`
-    : completed.map(
-      (r) => `<option value="${r.ride_id}">#${r.ride_id} — ${escape(r.driver_name)}</option>`
+  // Only completed rides that the rider hasn't already rated.
+  const pending = await api('/api/rider/ratings/pending');
+  const sel = document.getElementById('rateRide');
+  const submitBtn = document.querySelector('#rateForm button[type="submit"]');
+  if (pending.length === 0) {
+    sel.innerHTML = `<option value="">No rides to rate yet</option>`;
+    sel.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
+  } else {
+    sel.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+    sel.innerHTML = pending.map(
+      (r) => `<option value="${r.ride_id}">
+        #${r.ride_id} — ${escape(r.driver_name)} (${escape(r.pickup_city)} → ${escape(r.dropoff_city)})
+      </option>`
     ).join('');
+  }
 }
 document.getElementById('rateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('rateMsg');
+  msg.innerHTML = '';
   const fd = new FormData(e.target);
   const body = Object.fromEntries(fd);
+  if (!body.ride_id) {
+    msg.innerHTML = `<div class="status-msg err">No ride selected.</div>`;
+    return;
+  }
   body.ride_id = Number(body.ride_id);
   body.score = Number(body.score);
   if (!body.comment) delete body.comment;
   try {
     await api('/api/rider/ratings', { method: 'POST', body: JSON.stringify(body) });
     msg.innerHTML = `<div class="status-msg ok">Rating submitted.</div>`;
+    loadRideOptions(); // refresh list — the rated ride drops out
   } catch (err) {
     msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
   }
