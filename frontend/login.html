@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign in — RideFlow</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">RideFlow</div>
+    <nav><a href="/register.html" class="btn secondary">Create account</a></nav>
+  </header>
+
+  <main class="center-screen">
+    <div class="card auth-card">
+      <h2 style="margin-top:0">Sign in</h2>
+      <div id="msg"></div>
+      <form id="loginForm">
+        <label>Email</label>
+        <input name="email" type="email" required placeholder="rider@demo.com" />
+        <div style="height:10px"></div>
+        <label>Password</label>
+        <input name="password" type="password" required />
+        <div style="height:14px"></div>
+        <button class="btn" type="submit" style="width:100%">Sign in</button>
+      </form>
+      <p style="color:var(--muted); font-size:13px; margin-top:14px">
+        Demo accounts (password = <code>password</code>):
+        <br/>• <code>admin@demo.com</code> · <code>rider@demo.com</code> · <code>driver@demo.com</code>
+      </p>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+  </footer>
+
+  <script type="module">
+    import { api, setSession } from '/js/api.js';
+    const form = document.getElementById('loginForm');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.innerHTML = '';
+      const fd = new FormData(form);
+      try {
+        const r = await api('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(Object.fromEntries(fd)),
+        });
+        setSession(r.token, r.user);
+        const role = String(r.user.role).toUpperCase();
+        location.href = role === 'RIDER' ? '/rider.html'
+          : role === 'DRIVER' ? '/driver.html' : '/admin.html';
+      } catch (err) {
+        msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

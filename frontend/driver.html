@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Driver — RideFlow</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">RideFlow · Driver</div>
+    <nav>
+      <span class="who" id="who"></span>
+      <button class="btn secondary" id="logoutBtn">Sign out</button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button data-tab="status" class="active">Status</button>
+      <button data-tab="incoming">Incoming requests</button>
+      <button data-tab="earnings">Earnings</button>
+      <button data-tab="history">Trip history</button>
+    </div>
+
+    <section id="tab-status">
+      <div class="card">
+        <h2>Availability</h2>
+        <p>Your current status: <span id="curStatus" class="pill">—</span></p>
+        <div class="row">
+          <button class="btn ok"     data-status="ONLINE">Go Online</button>
+          <button class="btn danger" data-status="OFFLINE">Go Offline</button>
+        </div>
+        <div id="statusMsg"></div>
+      </div>
+      <div class="card">
+        <h2>Profile</h2>
+        <div id="profile" class="grid-3"></div>
+      </div>
+    </section>
+
+    <section id="tab-incoming" class="hide">
+      <div class="card">
+        <h2>Incoming ride requests</h2>
+        <p style="color:var(--muted); font-size:13px">
+          Only shown when you are <strong>ONLINE</strong>.
+        </p>
+        <div id="incomingTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-earnings" class="hide">
+      <div class="card">
+        <h2>Earnings</h2>
+        <div id="earningsKpi" class="grid-3"></div>
+      </div>
+      <div class="card">
+        <h2>Recent payouts</h2>
+        <div id="earningsTable"></div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="hide">
+      <div class="card">
+        <h2>All your rides</h2>
+        <div id="historyTable"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+  </footer>
+  <script type="module" src="/js/driver.js"></script>
+</body>
+</html>
