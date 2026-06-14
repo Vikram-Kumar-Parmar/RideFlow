@@ -28,100 +28,100 @@
 
     <section id="tab-dash">
       <div class="card">
-        <h2>Live snapshot</h2>
+        <h2>Live Snapshot</h2>
         <div id="kpis" class="grid-3"></div>
       </div>
       <div class="card">
-        <h2>Active rides (ActiveRidesView)</h2>
-        <div id="activeTable"></div>
+        <h2>Active Rides (ActiveRidesView)</h2>
+        <div id="activeTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Top drivers (TopDriversView, avg rating &gt; 4.5)</h2>
-        <div id="topDriversTable"></div>
+        <h2>Top Drivers (TopDriversView, rating > 4.5)</h2>
+        <div id="topDriversTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-users" class="hide">
       <div class="card">
-        <h2>Users</h2>
-        <div id="usersTable"></div>
+        <h2>Users Management</h2>
+        <div id="usersTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-drivers" class="hide">
       <div class="card">
-        <h2>Drivers — verify, suspend or unflag</h2>
-        <div id="driversTable"></div>
+        <h2>Drivers Verification & Flags</h2>
+        <div id="driversTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-vehicles" class="hide">
       <div class="card">
-        <h2>Vehicles</h2>
-        <div id="vehiclesTable"></div>
+        <h2>Vehicles Management</h2>
+        <div id="vehiclesTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-fares" class="hide">
       <div class="card">
-        <h2>Fare rules</h2>
-        <div id="faresTable"></div>
+        <h2>Fare Rules Configuration</h2>
+        <div id="faresTable" style="display: flex; flex-direction: column; gap: 16px;"></div>
       </div>
     </section>
 
     <section id="tab-reports" class="hide">
       <div class="card">
-        <h2>Revenue per city — <code>SUM(amount) GROUP BY city</code></h2>
-        <div id="revenueTable"></div>
+        <h2>Revenue per City — <code>SUM(amount) GROUP BY city</code></h2>
+        <div id="revenueTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Trips per driver — <code>COUNT(*) GROUP BY driver_id</code></h2>
-        <div id="tripsTable"></div>
+        <h2>Trips per Driver — <code>COUNT(*) GROUP BY driver_id</code></h2>
+        <div id="tripsTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Low-rated drivers — <code>HAVING AVG(score) &lt; 3.5</code></h2>
-        <div id="lowRatedTable"></div>
+        <h2>Low-Rated Drivers — <code>HAVING AVG(score) < 3.5</code></h2>
+        <div id="lowRatedTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Full trip report — INNER JOIN riders × rides × drivers × vehicles</h2>
-        <div id="fullTripTable"></div>
+        <h2>Full Trip Report — Inner Join riders, rides, drivers, vehicles</h2>
+        <div id="fullTripTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>All riders — LEFT JOIN (zero-ride riders included)</h2>
-        <div id="allRidersTable"></div>
+        <h2>All Riders — Left Join (zero-ride riders included)</h2>
+        <div id="allRidersTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Promo discount usage — JOIN payments × promo_codes</h2>
-        <div id="promoTable"></div>
+        <h2>Promo Discount Usage — Join payments, promo_codes</h2>
+        <div id="promoTable" style="overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Per-rider completed-ride history</h2>
-        <div class="row">
-          <div style="width:200px">
-            <label>Rider</label>
-            <select id="riderPicker"></select>
+        <h2>Per-Rider Completed-Ride History</h2>
+        <div class="form-row" style="align-items: flex-end; max-width: 360px;">
+          <div class="form-group" style="margin-bottom: 0; flex: 1;">
+            <label for="riderPicker">Select Rider</label>
+            <select id="riderPicker" style="width: 100%;"></select>
           </div>
-          <div><button class="btn" id="loadRiderRides">Load</button></div>
+          <button class="btn" id="loadRiderRides" style="height: 44px;">Load History</button>
         </div>
-        <div id="riderRidesTable" style="margin-top:12px"></div>
+        <div id="riderRidesTable" style="margin-top: 20px; overflow-x: auto;"></div>
       </div>
       <div class="card">
-        <h2>Drivers in city (ordered by rating)</h2>
-        <div class="row">
-          <div style="width:200px">
-            <label>City</label>
-            <input id="cityInput" placeholder="Karachi" />
+        <h2>Drivers in City (ordered by rating)</h2>
+        <div class="form-row" style="align-items: flex-end; max-width: 360px;">
+          <div class="form-group" style="margin-bottom: 0; flex: 1;">
+            <label for="cityInput">Enter City</label>
+            <input id="cityInput" placeholder="Karachi" style="width: 100%;" />
           </div>
-          <div><button class="btn" id="loadDriversCity">Load</button></div>
+          <button class="btn" id="loadDriversCity" style="height: 44px;">Find Drivers</button>
         </div>
-        <div id="driversCityTable" style="margin-top:12px"></div>
+        <div id="driversCityTable" style="margin-top: 20px; overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-alerts" class="hide">
       <div class="card">
-        <h2>Admin notifications (from low-rating trigger)</h2>
-        <div id="alertsTable"></div>
+        <h2>System Alerts (Low-rating trigger notifications)</h2>
+        <div id="alertsTable" style="overflow-x: auto;"></div>
       </div>
     </section>
   </main>

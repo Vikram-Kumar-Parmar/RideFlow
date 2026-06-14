@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>RideFlow</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <main class="center-screen">
@@ -17,7 +17,7 @@
     Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
   </footer>
   <script type="module">
-    import { getUser } from '/js/api.js';
+    import { getUser } from './js/api.js';
     const u = getUser();
     if (!u) location.href = '/login.html';
     else if (String(u.role).toUpperCase() === 'RIDER') location.href = '/rider.html';
