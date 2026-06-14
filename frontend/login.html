@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sign in — RideFlow</title>
-  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <header class="top">
@@ -14,21 +14,28 @@
 
   <main class="center-screen">
     <div class="card auth-card">
-      <h2 style="margin-top:0">Sign in</h2>
+      <h2>Sign in</h2>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">Enter your credentials to access your dashboard.</p>
       <div id="msg"></div>
       <form id="loginForm">
-        <label>Email</label>
-        <input name="email" type="email" required placeholder="rider@demo.com" />
-        <div style="height:10px"></div>
-        <label>Password</label>
-        <input name="password" type="password" required />
-        <div style="height:14px"></div>
-        <button class="btn" type="submit" style="width:100%">Sign in</button>
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input id="email" name="email" type="email" required placeholder="rider@demo.com" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="••••••••" />
+        </div>
+        <button class="btn" type="submit" style="width:100%; margin-top: 8px;">Sign in</button>
       </form>
-      <p style="color:var(--muted); font-size:13px; margin-top:14px">
-        Demo accounts (password = <code>password</code>):
-        <br/>• <code>admin@demo.com</code> · <code>rider@demo.com</code> · <code>driver@demo.com</code>
-      </p>
+      <div style="margin-top: 24px; padding: 12px 14px; background-color: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 12px; color: var(--muted); line-height: 1.6;">
+        <span style="font-weight: 700; color: var(--text);">Demo Accounts</span> (password: <code style="background: var(--surface-3); padding: 2px 4px; border-radius: 4px; color: var(--text-dark);">password</code>)
+        <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px;">
+          <span class="pill" style="font-size: 10px;">admin@demo.com</span>
+          <span class="pill" style="font-size: 10px;">rider@demo.com</span>
+          <span class="pill" style="font-size: 10px;">driver@demo.com</span>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -37,7 +44,7 @@
   </footer>
 
   <script type="module">
-    import { api, setSession } from '/js/api.js';
+    import { api, setSession } from './js/api.js';
     const form = document.getElementById('loginForm');
     const msg = document.getElementById('msg');
     form.addEventListener('submit', async (e) => {

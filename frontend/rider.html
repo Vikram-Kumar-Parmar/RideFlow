@@ -27,48 +27,60 @@
       <div class="card">
         <h2>Book a ride</h2>
         <div id="bookMsg"></div>
-        <form id="bookForm" class="row">
-          <div style="flex:1; min-width:160px">
-            <label>Pickup</label>
-            <select name="pickup_loc_id" required></select>
+        <form id="bookForm" style="display: flex; flex-direction: column; gap: 20px;">
+          <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px;">Route Information</h3>
+          <div class="form-row">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label for="pickup_loc_id">Pickup Location</label>
+              <select id="pickup_loc_id" name="pickup_loc_id" required></select>
+            </div>
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label for="dropoff_loc_id">Drop-off Location</label>
+              <select id="dropoff_loc_id" name="dropoff_loc_id" required></select>
+            </div>
           </div>
-          <div style="flex:1; min-width:160px">
-            <label>Drop-off</label>
-            <select name="dropoff_loc_id" required></select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="distance_km">Distance (km)</label>
+              <input id="distance_km" name="distance_km" type="number" step="0.1" min="0.1" value="5" />
+            </div>
+            <div class="form-group">
+              <label for="duration_min">Est. Duration (min)</label>
+              <input id="duration_min" name="duration_min" type="number" min="1" value="15" />
+            </div>
           </div>
-          <div style="width:130px">
-            <label>Vehicle</label>
-            <select name="vehicle_type" required>
-              <option>ECONOMY</option>
-              <option>PREMIUM</option>
-              <option>BIKE</option>
-            </select>
+
+          <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px; margin-top: 10px;">Preference & Payment</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vehicle_type">Vehicle Type</label>
+              <select id="vehicle_type" name="vehicle_type" required>
+                <option>ECONOMY</option>
+                <option>PREMIUM</option>
+                <option>BIKE</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="promo_code">Promo Code</label>
+              <input id="promo_code" name="promo_code" placeholder="optional" />
+            </div>
+            <div class="form-group">
+              <label for="payment_method">Payment Method</label>
+              <select id="payment_method" name="payment_method">
+                <option>CASH</option>
+                <option>WALLET</option>
+                <option>CARD</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="is_peak">Peak Hour?</label>
+              <select id="is_peak" name="is_peak">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
           </div>
-          <div style="width:110px">
-            <label>Distance (km)</label>
-            <input name="distance_km" type="number" step="0.1" min="0.1" value="5" />
-          </div>
-          <div style="width:110px">
-            <label>Duration (min)</label>
-            <input name="duration_min" type="number" min="1" value="15" />
-          </div>
-          <div style="width:130px">
-            <label>Promo code</label>
-            <input name="promo_code" placeholder="optional" />
-          </div>
-          <div style="width:120px">
-            <label>Payment</label>
-            <select name="payment_method">
-              <option>CASH</option><option>WALLET</option><option>CARD</option>
-            </select>
-          </div>
-          <div style="width:90px">
-            <label>Peak?</label>
-            <select name="is_peak"><option value="false">No</option><option value="true">Yes</option></select>
-          </div>
-          <div>
-            <button class="btn" type="submit">Book</button>
-          </div>
+          <button class="btn" type="submit" style="align-self: flex-start; min-width: 160px; margin-top: 10px;">Book Ride</button>
         </form>
       </div>
     </section>
@@ -76,47 +88,55 @@
     <section id="tab-history" class="hide">
       <div class="card">
         <h2>Your ride history</h2>
-        <div id="historyTable"></div>
+        <div id="historyTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
     <section id="tab-wallet" class="hide">
-      <div class="card">
+      <div class="card" style="max-width: 480px;">
         <h2>Wallet</h2>
-        <p>Current balance: <strong id="walletBal">—</strong></p>
-        <form id="topupForm" class="row">
-          <div style="width:160px">
-            <label>Top-up amount</label>
-            <input name="amount" type="number" min="1" step="1" value="500" />
+        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%); padding: 24px; border-radius: var(--radius); color: white; margin-bottom: 24px; box-shadow: var(--shadow);">
+          <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.2px; opacity: 0.85;">Available Balance</div>
+          <div id="walletBal" style="font-family: var(--font-display); font-size: 36px; font-weight: 800; margin-top: 8px;">—</div>
+        </div>
+        <form id="topupForm" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="amount">Top-up amount (Rs)</label>
+            <input id="amount" name="amount" type="number" min="1" step="1" value="500" />
           </div>
-          <div><button class="btn" type="submit">Top up</button></div>
+          <button class="btn" type="submit" style="align-self: flex-start;">Top up Wallet</button>
         </form>
-        <div id="topupMsg"></div>
+        <div id="topupMsg" style="margin-top: 16px;"></div>
       </div>
     </section>
 
     <section id="tab-ratings" class="hide">
       <div class="card">
         <h2>Rate a completed ride</h2>
-        <form id="rateForm" class="row">
-          <div style="width:140px">
-            <label>Ride</label>
-            <select name="ride_id" id="rateRide"></select>
+        <form id="rateForm" style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label for="rateRide">Select Ride</label>
+              <select name="ride_id" id="rateRide"></select>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 100px;">
+              <label for="score">Rating Score</label>
+              <select id="score" name="score">
+                <option>5</option>
+                <option>4</option>
+                <option>3</option>
+                <option>2</option>
+                <option>1</option>
+              </select>
+            </div>
           </div>
-          <div style="width:90px">
-            <label>Score</label>
-            <select name="score">
-              <option>5</option><option>4</option><option>3</option>
-              <option>2</option><option>1</option>
-            </select>
+          <div class="form-group">
+            <label for="comment">Comment</label>
+            <input id="comment" name="comment" placeholder="Optional review comment…" />
           </div>
-          <div style="flex:1">
-            <label>Comment</label>
-            <input name="comment" placeholder="Optional comment…" />
-          </div>
-          <div><button class="btn" type="submit">Submit</button></div>
+          <button class="btn" type="submit" style="align-self: flex-start; min-width: 150px;">Submit Review</button>
         </form>
-        <div id="rateMsg"></div>
+        <div id="rateMsg" style="margin-top: 16px;"></div>
       </div>
     </section>
   </main>
