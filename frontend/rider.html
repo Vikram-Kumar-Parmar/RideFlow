@@ -93,6 +93,47 @@
               </select>
             </div>
           </div>
+          <!-- Live Fare Estimation Card -->
+          <div id="liveEstimation" class="card-estimator" style="background: var(--surface-3); padding: 18px; border-radius: var(--radius-lg); border: 1px dashed var(--border); display: none; margin-top: 10px; max-width: 480px;">
+            <h4 style="margin: 0 0 12px 0; color: var(--text-dark); font-family: var(--font-display); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <span>📊 Estimated Fare Details</span>
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted);">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Route Distance:</span>
+                <strong id="estDistance" style="color: var(--text-dark);">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Est. Trip Duration:</span>
+                <strong id="estDuration" style="color: var(--text-dark);">—</strong>
+              </div>
+              <hr style="border: 0; border-top: 1px solid var(--border); margin: 4px 0;" />
+              <div style="display: flex; justify-content: space-between;">
+                <span>Base Rate:</span>
+                <strong id="estBaseFare" style="color: var(--text-dark);">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Distance Charges:</span>
+                <strong id="estDistanceRate" style="color: var(--text-dark);">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Time Charges:</span>
+                <strong id="estDurationRate" style="color: var(--text-dark);">—</strong>
+              </div>
+              <div id="estSurgeRow" style="display: flex; justify-content: space-between; color: var(--warn); display: none;">
+                <span>Peak Surge:</span>
+                <strong id="estSurge">—</strong>
+              </div>
+              <div id="estPromoRow" style="display: flex; justify-content: space-between; color: var(--ok); display: none;">
+                <span>Promo Discount:</span>
+                <strong id="estPromo">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; font-size: 16px; color: var(--primary); font-weight: 800;">
+                <span>Total Est. Fare:</span>
+                <strong id="estTotalFare">—</strong>
+              </div>
+            </div>
+          </div>
           <button class="btn" type="submit" id="bookBtn" style="align-self: flex-start; min-width: 160px; margin-top: 10px;">Book Ride</button>
         </form>
       </div>

@@ -20,15 +20,171 @@ tabs.forEach((b) => {
   });
 });
 
+let locationsList = [];
+let fareRules = [];
+let activePromos = [];
+
 // ---------- BOOKING -----------------------------------------------------
 async function loadLocations() {
-  const locs = await api('/api/lookups/locations');
-  const optHtml = locs.map(
+  locationsList = await api('/api/lookups/locations');
+  const optHtml = locationsList.map(
     (l) => `<option value="${l.location_id}">${escape(l.address)} (${escape(l.city)})</option>`
   ).join('');
   document.querySelectorAll('select[name="pickup_loc_id"], select[name="dropoff_loc_id"]')
     .forEach((s) => { s.innerHTML = optHtml; });
 }
+
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function recalculateLiveFare() {
+  const pickupId = Number(document.getElementById('pickup_loc_id').value);
+  const dropoffId = Number(document.getElementById('dropoff_loc_id').value);
+  const distanceInput = document.getElementById('distance_km');
+  const durationInput = document.getElementById('duration_min');
+  const vehicleType = document.getElementById('vehicle_type').value;
+  const isPeak = document.getElementById('is_peak').value === 'true';
+  const promoCodeValue = document.getElementById('promo_code').value.trim().toUpperCase();
+
+  const estEl = document.getElementById('liveEstimation');
+  if (!pickupId || !dropoffId || pickupId === dropoffId) {
+    if (estEl) estEl.style.display = 'none';
+    return;
+  }
+
+  const dist = Number(distanceInput.value) || 0;
+  const dur = Number(durationInput.value) || 0;
+
+  // Find fare rule for selected vehicle
+  const rule = fareRules.find(r => r.vehicle_type === vehicleType);
+  if (!rule) {
+    if (estEl) estEl.style.display = 'none';
+    return;
+  }
+
+  const base = Number(rule.base_rate);
+  const perKm = Number(rule.per_km_rate);
+  const perMin = Number(rule.per_min_rate);
+  const surgeMult = Number(rule.surge_multiplier);
+  
+  // Calculate fare parts
+  const distanceFare = dist * perKm;
+  const durationFare = dur * perMin;
+  const subtotal = base + distanceFare + durationFare;
+  
+  let surgeVal = 0;
+  let finalFare = subtotal;
+  const isSurgeActive = isPeak || !!rule.is_surge_active;
+  if (isSurgeActive) {
+    finalFare = subtotal * surgeMult;
+    surgeVal = finalFare - subtotal;
+  }
+
+  // Find promo code
+  let promoDiscount = 0;
+  const promo = activePromos.find(p => p.code.toUpperCase() === promoCodeValue);
+  if (promo) {
+    promoDiscount = finalFare * (Number(promo.discount_pct) / 100);
+  }
+  const finalAmount = Math.max(0, finalFare - promoDiscount);
+
+  // Render to DOM
+  const estDistanceEl = document.getElementById('estDistance');
+  const estDurationEl = document.getElementById('estDuration');
+  const estBaseFareEl = document.getElementById('estBaseFare');
+  const estDistanceRateEl = document.getElementById('estDistanceRate');
+  const estDurationRateEl = document.getElementById('estDurationRate');
+  const estTotalFareEl = document.getElementById('estTotalFare');
+
+  if (estDistanceEl) estDistanceEl.textContent = `${dist.toFixed(1)} km`;
+  if (estDurationEl) estDurationEl.textContent = `${dur} mins`;
+  if (estBaseFareEl) estBaseFareEl.textContent = fmtMoney(base);
+  if (estDistanceRateEl) estDistanceRateEl.textContent = fmtMoney(distanceFare);
+  if (estDurationRateEl) estDurationRateEl.textContent = fmtMoney(durationFare);
+
+  const surgeRow = document.getElementById('estSurgeRow');
+  if (surgeRow) {
+    if (isSurgeActive && surgeVal > 0) {
+      document.getElementById('estSurge').textContent = `+${fmtMoney(surgeVal)} (${surgeMult}x)`;
+      surgeRow.style.display = 'flex';
+    } else {
+      surgeRow.style.display = 'none';
+    }
+  }
+
+  const promoRow = document.getElementById('estPromoRow');
+  if (promoRow) {
+    if (promoDiscount > 0) {
+      document.getElementById('estPromo').textContent = `-${fmtMoney(promoDiscount)} (${promo.discount_pct}%)`;
+      promoRow.style.display = 'flex';
+    } else {
+      promoRow.style.display = 'none';
+    }
+  }
+
+  if (estTotalFareEl) estTotalFareEl.textContent = fmtMoney(finalAmount);
+  if (estEl) estEl.style.display = 'block';
+}
+
+function setupBookingLiveCalculations() {
+  const pickupSel = document.getElementById('pickup_loc_id');
+  const dropoffSel = document.getElementById('dropoff_loc_id');
+  const distanceInput = document.getElementById('distance_km');
+  const durationInput = document.getElementById('duration_min');
+  const vehicleSel = document.getElementById('vehicle_type');
+  const isPeakSel = document.getElementById('is_peak');
+  const promoInput = document.getElementById('promo_code');
+
+  if (!pickupSel || !dropoffSel) return;
+
+  const onRouteFieldsChange = () => {
+    const pId = Number(pickupSel.value);
+    const dId = Number(dropoffSel.value);
+    if (pId && dId && pId !== dId) {
+      const pLoc = locationsList.find(l => l.location_id === pId);
+      const dLoc = locationsList.find(l => l.location_id === dId);
+      if (pLoc && dLoc) {
+        const straightDist = calculateHaversineDistance(
+          Number(pLoc.latitude), Number(pLoc.longitude),
+          Number(dLoc.latitude), Number(dLoc.longitude)
+        );
+        // Winding factor: 1.3
+        const realDist = Math.max(0.5, straightDist * 1.3);
+        if (distanceInput) distanceInput.value = realDist.toFixed(1);
+        
+        // 2.5 min per km + 3 min traffic base
+        const realDur = Math.max(1, Math.round(realDist * 2.5 + 3));
+        if (durationInput) durationInput.value = realDur;
+      }
+    } else {
+      if (distanceInput) distanceInput.value = 0;
+      if (durationInput) durationInput.value = 0;
+    }
+    recalculateLiveFare();
+  };
+
+  pickupSel.addEventListener('change', onRouteFieldsChange);
+  dropoffSel.addEventListener('change', onRouteFieldsChange);
+
+  // Other inputs recalculate fare
+  if (distanceInput) distanceInput.addEventListener('input', recalculateLiveFare);
+  if (durationInput) durationInput.addEventListener('input', recalculateLiveFare);
+  if (vehicleSel) vehicleSel.addEventListener('change', recalculateLiveFare);
+  if (isPeakSel) isPeakSel.addEventListener('change', recalculateLiveFare);
+  if (promoInput) promoInput.addEventListener('input', recalculateLiveFare);
+
+  // Initial calculation
+  onRouteFieldsChange();
+}
+
 
 // Track the current active ride ID and polling interval.
 let activeRideId = null;
@@ -289,5 +445,15 @@ document.getElementById('rateForm').addEventListener('submit', async (e) => {
 });
 
 // init
-loadLocations();
-checkForExistingActiveRide();
+async function initializeBooking() {
+  try {
+    await loadLocations();
+    fareRules = await api('/api/lookups/fare-rules');
+    activePromos = await api('/api/lookups/promo-codes/active');
+    setupBookingLiveCalculations();
+  } catch (err) {
+    console.error('Failed to initialize booking config:', err);
+  }
+  checkForExistingActiveRide();
+}
+initializeBooking();
