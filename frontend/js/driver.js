@@ -4,6 +4,18 @@ const me = requireRole('DRIVER');
 document.getElementById('who').textContent = `${me.full_name} (Driver)`;
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
+let incomingPollTimer = null;
+function startIncomingPolling() {
+  stopIncomingPolling();
+  incomingPollTimer = setInterval(loadIncoming, 5000);
+}
+function stopIncomingPolling() {
+  if (incomingPollTimer) {
+    clearInterval(incomingPollTimer);
+    incomingPollTimer = null;
+  }
+}
+
 const tabs = document.querySelectorAll('.tabs button');
 tabs.forEach((b) => {
   b.addEventListener('click', () => {
@@ -11,7 +23,8 @@ tabs.forEach((b) => {
     document.querySelectorAll('main > section').forEach((s) => {
       s.classList.toggle('hide', s.id !== `tab-${b.dataset.tab}`);
     });
-    if (b.dataset.tab === 'incoming') loadIncoming();
+    stopIncomingPolling();
+    if (b.dataset.tab === 'incoming') { loadIncoming(); startIncomingPolling(); }
     if (b.dataset.tab === 'earnings') loadEarnings();
     if (b.dataset.tab === 'history') loadHistory();
     if (b.dataset.tab === 'status') { loadProfile(); refreshActiveTrip(); }
@@ -47,6 +60,7 @@ document.querySelectorAll('button[data-status]').forEach((b) => {
         body: JSON.stringify({ avail_status: b.dataset.status }),
       });
       setStatus(r.avail_status);
+      loadProfile();
       msg.innerHTML = `<div class="status-msg ok">Status updated.</div>`;
     } catch (err) {
       msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
@@ -89,6 +103,7 @@ async function loadIncoming() {
           // so the driver can progress the ride step-by-step.
           loadIncoming();            // remove from incoming list
           await refreshActiveTrip(); // show the active trip card
+          loadProfile();
           // Switch to Status tab so driver sees the card.
           document.querySelector('.tabs button[data-tab="status"]')?.click();
         } else {
@@ -105,6 +120,7 @@ async function loadIncoming() {
 // ---- Active Trip Tracker (Driver side) ------------------------------
 
 let tripPollTimer = null;
+let activeTripId = null;
 
 function startTripPolling() {
   stopTripPolling();
@@ -119,10 +135,18 @@ async function refreshActiveTrip() {
   try {
     const ride = await api('/api/driver/rides/active');
     if (!ride) {
+      if (activeTripId) {
+        activeTripId = null;
+        loadProfile();
+        loadHistory();
+        loadEarnings();
+        loadRiderRateOptions();
+      }
       stopTripPolling();
       document.getElementById('activeTripCard').classList.add('hide');
       return;
     }
+    activeTripId = ride.ride_id;
     renderActiveTrip(ride);
     // Keep polling while there's an active ride.
     if (!tripPollTimer) startTripPolling();

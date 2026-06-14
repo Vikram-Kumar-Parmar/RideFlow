@@ -211,6 +211,8 @@ document.getElementById('bookForm').addEventListener('submit', async (e) => {
     </div>`;
     activeRideId = r.ride_id;
     startPollingActiveRide();
+    loadWallet();
+    loadHistory();
   } catch (err) {
     msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
   } finally {
@@ -235,11 +237,17 @@ async function refreshActiveRide() {
   try {
     const ride = await api('/api/rider/rides/active');
     if (!ride) {
-      // No active ride — hide the card and stop polling.
+      if (activeRideId) {
+        activeRideId = null;
+        loadWallet();
+        loadHistory();
+        loadRideOptions();
+      }
       stopPollingActiveRide();
       document.getElementById('activeRideCard').classList.add('hide');
       return;
     }
+    activeRideId = ride.ride_id;
     renderActiveRide(ride);
   } catch (_) { /* network blip — keep polling */ }
 }
@@ -283,6 +291,8 @@ function renderActiveRide(ride) {
         msgEl.innerHTML = `<div class="status-msg ok">Ride cancelled.</div>`;
         stopPollingActiveRide();
         setTimeout(() => card.classList.add('hide'), 2500);
+        loadWallet();
+        loadHistory();
       } catch (err) {
         msgEl.innerHTML = `<div class="status-msg err">${err.message}</div>`;
         cancelBtn.disabled = false;
@@ -303,6 +313,9 @@ function renderActiveRide(ride) {
         msgEl.innerHTML = `<div class="status-msg ok">Ride completed! Head to Ratings to review your driver.</div>`;
         stopPollingActiveRide();
         setTimeout(() => card.classList.add('hide'), 4000);
+        loadWallet();
+        loadHistory();
+        loadRideOptions();
       } catch (err) {
         msgEl.innerHTML = `<div class="status-msg err">${err.message}</div>`;
         completeBtn.disabled = false;

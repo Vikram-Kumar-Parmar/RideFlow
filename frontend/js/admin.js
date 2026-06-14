@@ -81,6 +81,7 @@ async function loadUsers() {
         await api(`/api/admin/users/${el.dataset.uid}/status`, {
           method: 'PUT', body: JSON.stringify({ acc_status: el.value }),
         });
+        loadUsers();
       } catch (e) { alert(e.message); }
     });
   });
@@ -118,6 +119,7 @@ async function loadDrivers() {
         await api(`/api/admin/drivers/${el.dataset.did}/verify`, {
           method: 'PUT', body: JSON.stringify({ verif_status: el.value }),
         });
+        loadDrivers();
       } catch (e) { alert(e.message); }
     });
   });
@@ -154,6 +156,7 @@ async function loadVehicles() {
         await api(`/api/admin/vehicles/${el.dataset.vid}/verify`, {
           method: 'PUT', body: JSON.stringify({ verif_status: el.value }),
         });
+        loadVehicles();
       } catch (e) { alert(e.message); }
     });
   });
@@ -369,6 +372,7 @@ async function loadComplaints() {
         await api(`/api/admin/complaints/${el.dataset.comp}/resolve`, {
           method: 'PUT', body: JSON.stringify({ comp_status: el.value }),
         });
+        loadComplaints();
       } catch (e) { alert(e.message); }
     });
   });
