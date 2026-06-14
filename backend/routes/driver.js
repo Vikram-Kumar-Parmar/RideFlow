@@ -13,6 +13,33 @@ async function getDriverId(userId) {
   return rows[0]?.driver_id;
 }
 
+// ----- ACTIVE RIDE (current in-flight ride for this driver) -----------
+// Declared first to avoid collision with parameterised /:id routes.
+router.get('/rides/active', async (req, res, next) => {
+  try {
+    const driverId = await getDriverId(req.user.user_id);
+    if (!driverId) return res.json(null);
+    const rows = await query(
+      `SELECT r.ride_id, r.ride_status, r.fare, r.distance_km, r.duration_min,
+              r.requested_at,
+              u.full_name  AS rider_name,
+              u.phone      AS rider_phone,
+              pl.city AS pickup_city,  pl.address AS pickup_address,
+              dl.city AS dropoff_city, dl.address AS dropoff_address
+         FROM rides r
+         JOIN users     u  ON u.user_id     = r.rider_id
+         JOIN locations pl ON pl.location_id = r.pickup_loc_id
+         JOIN locations dl ON dl.location_id = r.dropoff_loc_id
+        WHERE r.driver_id = ?
+          AND r.ride_status IN ('ACCEPTED','DRIVER_EN_ROUTE','IN_PROGRESS')
+        ORDER BY r.requested_at DESC
+        LIMIT 1`,
+      [driverId]
+    );
+    res.json(rows[0] || null);
+  } catch (e) { next(e); }
+});
+
 // ----- AVAILABILITY (Online/Offline) ----------------------------------
 router.put('/availability', async (req, res, next) => {
   try {

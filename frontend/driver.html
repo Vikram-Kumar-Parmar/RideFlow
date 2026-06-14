@@ -25,6 +25,18 @@
     </div>
 
     <section id="tab-status">
+      <!-- ── Active Trip Tracker (appears when driver has an accepted/ongoing ride) ── -->
+      <div id="activeTripCard" class="card hide" style="border: 2px solid var(--primary); position: relative; margin-bottom: 24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <h2 style="margin:0;">📍 Active Trip</h2>
+          <span id="activeTripStatus" class="pill warn">—</span>
+        </div>
+        <div id="activeTripDetails" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px;"></div>
+        <div id="activeTripActions" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;"></div>
+        <div id="activeTripMsg" style="margin-top:12px;"></div>
+        <div style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;"></div>
+      </div>
+
       <div class="card" style="max-width: 480px;">
         <h2>Availability Status</h2>
         <p style="margin-bottom: 20px; font-size: 15px; color: var(--muted);">
