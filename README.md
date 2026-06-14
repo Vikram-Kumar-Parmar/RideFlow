@@ -7,7 +7,7 @@ database objects (views, indexes, stored procedure, triggers, scheduled event,
 and access-control roles).
 
 ## Team
-
+/
 | Name          | Roll No   | Section |
 |---------------|-----------|---------|
 | Vikram Kumar  | 23K-2062  | DS-4B   |
