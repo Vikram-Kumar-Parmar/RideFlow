@@ -5,7 +5,105 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 const router = express.Router();
 router.use(requireAuth, requireRole('RIDER'));
 
-// ----- BOOK A RIDE -----------------------------------------------------
+// ----- ACTIVE RIDE (current in-flight ride for this rider) -------------
+// Must be defined BEFORE /rides (POST) and /rides (GET) to avoid param
+// collision — Express matches routes in declaration order.
+router.get('/rides/active', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT r.ride_id, r.ride_status, r.fare, r.distance_km, r.duration_min,
+              r.requested_at,
+              du.full_name  AS driver_name,
+              du.phone      AS driver_phone,
+              v.make, v.model, v.license_plate, v.vehicle_type,
+              pl.city AS pickup_city, pl.address AS pickup_address,
+              dl.city AS dropoff_city, dl.address AS dropoff_address,
+              p.payment_method, p.amount AS paid_amount, p.payment_status
+         FROM rides r
+         JOIN drivers  d   ON d.driver_id   = r.driver_id
+         JOIN users    du  ON du.user_id    = d.user_id
+         JOIN vehicles v   ON v.vehicle_id  = r.vehicle_id
+         JOIN locations pl ON pl.location_id = r.pickup_loc_id
+         JOIN locations dl ON dl.location_id = r.dropoff_loc_id
+         LEFT JOIN payments p ON p.ride_id  = r.ride_id
+        WHERE r.rider_id = ?
+          AND r.ride_status IN ('REQUESTED','ACCEPTED','DRIVER_EN_ROUTE','IN_PROGRESS')
+        ORDER BY r.requested_at DESC
+        LIMIT 1`,
+      [req.user.user_id]
+    );
+    res.json(rows[0] || null);
+  } catch (e) { next(e); }
+});
+
+// ----- RIDER COMPLETE RIDE --------------------------------------------
+// Allows the rider to mark a ride as complete from their side.
+// Works for ACCEPTED, DRIVER_EN_ROUTE, and IN_PROGRESS rides.
+router.post('/rides/:id/complete', async (req, res, next) => {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Verify the ride belongs to this rider and is completable.
+    const [rr] = await conn.query(
+      `SELECT r.ride_id, r.ride_status, r.fare, r.driver_id
+         FROM rides r
+        WHERE r.ride_id = ? AND r.rider_id = ?`,
+      [req.params.id, req.user.user_id]
+    );
+    if (rr.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Ride not found or not yours' });
+    }
+    if (!['ACCEPTED', 'DRIVER_EN_ROUTE', 'IN_PROGRESS'].includes(rr[0].ride_status)) {
+      await conn.rollback();
+      return res.status(409).json({
+        error: `Ride cannot be completed in status: ${rr[0].ride_status}`,
+      });
+    }
+
+    const rideId   = rr[0].ride_id;
+    const driverId = rr[0].driver_id;
+    const fare     = Number(rr[0].fare);
+
+    // Mark payment PAID (triggers ride COMPLETED on MySQL via trigger).
+    await conn.query(
+      `UPDATE payments SET payment_status = 'PAID'
+        WHERE ride_id = ? AND payment_status = 'PENDING'`,
+      [rideId]
+    );
+
+    // Explicit update for TiDB (no triggers) and safety.
+    await conn.query(
+      `UPDATE rides SET ride_status = 'COMPLETED' WHERE ride_id = ?`,
+      [rideId]
+    );
+
+    // Credit driver earnings (20% commission), update wallet + trip count.
+    const net = Math.round(fare * 0.80 * 100) / 100;
+    await conn.query(
+      `INSERT IGNORE INTO driver_earnings
+         (ride_id, driver_id, gross_fare, commission_pct, net_earning, payout_status)
+       VALUES (?, ?, ?, 20.00, ?, 'PAID')`,
+      [rideId, driverId, fare, net]
+    );
+    await conn.query(
+      `UPDATE drivers
+          SET wallet_balance = wallet_balance + ?,
+              total_trips    = total_trips + 1,
+              avail_status   = 'ONLINE'
+        WHERE driver_id = ?`,
+      [net, driverId]
+    );
+
+    await conn.commit();
+    res.json({ ok: true, ride_id: Number(rideId), ride_status: 'COMPLETED', net_driver_earning: net });
+  } catch (e) {
+    await conn.rollback();
+    next(e);
+  } finally { conn.release(); }
+});
+
 // Required body fields:
 //   pickup_loc_id, dropoff_loc_id, vehicle_type, distance_km, duration_min
 // Optional:
