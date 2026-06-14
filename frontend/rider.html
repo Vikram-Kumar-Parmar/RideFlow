@@ -24,6 +24,19 @@
     </div>
 
     <section id="tab-book">
+      <!-- ── Active Ride Tracker (shown after booking) ── -->
+      <div id="activeRideCard" class="card hide" style="border: 2px solid var(--primary); position: relative;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+          <h2 style="margin:0;">🚗 Your Active Ride</h2>
+          <span id="activeRideStatus" class="pill warn">—</span>
+        </div>
+        <div id="activeRideDetails" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px;"></div>
+        <div id="activeRideActions" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
+        <div id="activeRideMsg" style="margin-top:12px;"></div>
+        <!-- Pulse dot -->
+        <div style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;" id="pulseIndicator"></div>
+      </div>
+
       <div class="card">
         <h2>Book a ride</h2>
         <div id="bookMsg"></div>
@@ -82,19 +95,6 @@
           </div>
           <button class="btn" type="submit" id="bookBtn" style="align-self: flex-start; min-width: 160px; margin-top: 10px;">Book Ride</button>
         </form>
-      </div>
-
-      <!-- ── Active Ride Tracker (shown after booking) ── -->
-      <div id="activeRideCard" class="card hide" style="border: 2px solid var(--primary); position: relative;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-          <h2 style="margin:0;">🚗 Your Active Ride</h2>
-          <span id="activeRideStatus" class="pill warn">—</span>
-        </div>
-        <div id="activeRideDetails" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px;"></div>
-        <div id="activeRideActions" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
-        <div id="activeRideMsg" style="margin-top:12px;"></div>
-        <!-- Pulse dot -->
-        <div style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;" id="pulseIndicator"></div>
       </div>
     </section>
 
