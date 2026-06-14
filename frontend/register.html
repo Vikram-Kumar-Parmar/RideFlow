@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Register — RideFlow</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
   <header class="top">
     <div class="brand">RideFlow</div>
@@ -15,7 +17,8 @@
   <main class="center-screen">
     <div class="card auth-card" style="max-width: 480px;">
       <h2>Create account</h2>
-      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px; text-align: center;">Join RideFlow to start booking or offering rides.</p>
+      <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px; text-align: center;">Join RideFlow to start
+        booking or offering rides.</p>
       <div id="msg"></div>
       <form id="regForm">
         <div class="form-group">
@@ -32,7 +35,8 @@
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input id="password" name="password" type="password" required minlength="6" placeholder="At least 6 characters" />
+          <input id="password" name="password" type="password" required minlength="6"
+            placeholder="At least 6 characters" />
         </div>
         <div class="form-group">
           <label for="role">Select Role</label>
@@ -41,8 +45,11 @@
             <option value="DRIVER">Driver (Offer Rides)</option>
           </select>
         </div>
-        <div id="driverFields" class="hide" style="margin-top: 20px; padding: 18px; background-color: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s ease;">
-          <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--text-dark);">Driver Verification</h3>
+        <div id="driverFields" class="hide"
+          style="margin-top: 20px; padding: 18px; background-color: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s ease;">
+          <h3
+            style="font-family: var(--font-display); font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--text-dark);">
+            Driver Verification</h3>
           <div class="form-group">
             <label for="license_num">License #</label>
             <input id="license_num" name="license_num" placeholder="LIC-XXXX" />
@@ -51,8 +58,10 @@
             <label for="cnic">CNIC</label>
             <input id="cnic" name="cnic" placeholder="42101-1234567-1" />
           </div>
-          
-          <h3 style="font-family: var(--font-display); font-size: 14px; font-weight: 700; margin: 18px 0 12px 0; color: var(--text-dark);">Vehicle Details</h3>
+
+          <h3
+            style="font-family: var(--font-display); font-size: 14px; font-weight: 700; margin: 18px 0 12px 0; color: var(--text-dark);">
+            Vehicle Details</h3>
           <div class="form-row">
             <div class="form-group">
               <label for="vehicle_make">Make</label>
@@ -92,7 +101,8 @@
   </main>
 
   <footer class="app-footer">
-    Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+    Developed by Umar Behram &middot; 23i-2604 &middot; Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+
   </footer>
 
   <script type="module">
@@ -123,4 +133,5 @@
     });
   </script>
 </body>
+
 </html>

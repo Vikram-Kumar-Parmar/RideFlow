@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Rider — RideFlow</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body>
   <header class="top">
     <div class="brand">RideFlow · Rider</div>
@@ -30,18 +32,24 @@
           <h2 style="margin:0;">🚗 Your Active Ride</h2>
           <span id="activeRideStatus" class="pill warn">—</span>
         </div>
-        <div id="activeRideDetails" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px;"></div>
+        <div id="activeRideDetails"
+          style="display:grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:20px;">
+        </div>
         <div id="activeRideActions" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
         <div id="activeRideMsg" style="margin-top:12px;"></div>
         <!-- Pulse dot -->
-        <div style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;" id="pulseIndicator"></div>
+        <div
+          style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;"
+          id="pulseIndicator"></div>
       </div>
 
       <div class="card">
         <h2>Book a ride</h2>
         <div id="bookMsg"></div>
         <form id="bookForm" style="display: flex; flex-direction: column; gap: 20px;">
-          <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px;">Route Information</h3>
+          <h3
+            style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px;">
+            Route Information</h3>
           <div class="form-row">
             <div class="form-group" style="flex: 2; min-width: 200px;">
               <label for="pickup_loc_id">Pickup Location</label>
@@ -63,7 +71,9 @@
             </div>
           </div>
 
-          <h3 style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px; margin-top: 10px;">Preference & Payment</h3>
+          <h3
+            style="font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: -8px; margin-top: 10px;">
+            Preference & Payment</h3>
           <div class="form-row">
             <div class="form-group">
               <label for="vehicle_type">Vehicle Type</label>
@@ -94,8 +104,10 @@
             </div>
           </div>
           <!-- Live Fare Estimation Card -->
-          <div id="liveEstimation" class="card-estimator" style="background: var(--surface-3); padding: 18px; border-radius: var(--radius-lg); border: 1px dashed var(--border); display: none; margin-top: 10px; max-width: 480px;">
-            <h4 style="margin: 0 0 12px 0; color: var(--text-dark); font-family: var(--font-display); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          <div id="liveEstimation" class="card-estimator"
+            style="background: var(--surface-3); padding: 18px; border-radius: var(--radius-lg); border: 1px dashed var(--border); display: none; margin-top: 10px; max-width: 480px;">
+            <h4
+              style="margin: 0 0 12px 0; color: var(--text-dark); font-family: var(--font-display); font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
               <span>📊 Estimated Fare Details</span>
             </h4>
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted);">
@@ -120,21 +132,25 @@
                 <span>Time Charges:</span>
                 <strong id="estDurationRate" style="color: var(--text-dark);">—</strong>
               </div>
-              <div id="estSurgeRow" style="display: flex; justify-content: space-between; color: var(--warn); display: none;">
+              <div id="estSurgeRow"
+                style="display: flex; justify-content: space-between; color: var(--warn); display: none;">
                 <span>Peak Surge:</span>
                 <strong id="estSurge">—</strong>
               </div>
-              <div id="estPromoRow" style="display: flex; justify-content: space-between; color: var(--ok); display: none;">
+              <div id="estPromoRow"
+                style="display: flex; justify-content: space-between; color: var(--ok); display: none;">
                 <span>Promo Discount:</span>
                 <strong id="estPromo">—</strong>
               </div>
-              <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; font-size: 16px; color: var(--primary); font-weight: 800;">
+              <div
+                style="display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; font-size: 16px; color: var(--primary); font-weight: 800;">
                 <span>Total Est. Fare:</span>
                 <strong id="estTotalFare">—</strong>
               </div>
             </div>
           </div>
-          <button class="btn" type="submit" id="bookBtn" style="align-self: flex-start; min-width: 160px; margin-top: 10px;">Book Ride</button>
+          <button class="btn" type="submit" id="bookBtn"
+            style="align-self: flex-start; min-width: 160px; margin-top: 10px;">Book Ride</button>
         </form>
       </div>
     </section>
@@ -149,9 +165,13 @@
     <section id="tab-wallet" class="hide">
       <div class="card" style="max-width: 480px;">
         <h2>Wallet</h2>
-        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%); padding: 24px; border-radius: var(--radius); color: white; margin-bottom: 24px; box-shadow: var(--shadow);">
-          <div style="font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.2px; opacity: 0.85;">Available Balance</div>
-          <div id="walletBal" style="font-family: var(--font-display); font-size: 36px; font-weight: 800; margin-top: 8px;">—</div>
+        <div
+          style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%); padding: 24px; border-radius: var(--radius); color: white; margin-bottom: 24px; box-shadow: var(--shadow);">
+          <div
+            style="font-size: 12px; text-transform: uppercase; font-weight: 700; letter-spacing: 1.2px; opacity: 0.85;">
+            Available Balance</div>
+          <div id="walletBal"
+            style="font-family: var(--font-display); font-size: 36px; font-weight: 800; margin-top: 8px;">—</div>
         </div>
         <form id="topupForm" style="display: flex; flex-direction: column; gap: 16px;">
           <div class="form-group" style="margin-bottom: 0;">
@@ -196,9 +216,10 @@
   </main>
 
   <footer class="app-footer">
-    Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+    Developed by Umar Behram &middot; 23i-2604 &middot; Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
   </footer>
 
   <script type="module" src="/js/rider.js"></script>
 </body>
+
 </html>

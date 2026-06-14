@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Driver — RideFlow</title>
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body>
   <header class="top">
     <div class="brand">RideFlow · Driver</div>
@@ -26,15 +28,20 @@
 
     <section id="tab-status">
       <!-- ── Active Trip Tracker (appears when driver has an accepted/ongoing ride) ── -->
-      <div id="activeTripCard" class="card hide" style="border: 2px solid var(--primary); position: relative; margin-bottom: 24px;">
+      <div id="activeTripCard" class="card hide"
+        style="border: 2px solid var(--primary); position: relative; margin-bottom: 24px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
           <h2 style="margin:0;">📍 Active Trip</h2>
           <span id="activeTripStatus" class="pill warn">—</span>
         </div>
-        <div id="activeTripDetails" style="display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px;"></div>
+        <div id="activeTripDetails"
+          style="display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px;">
+        </div>
         <div id="activeTripActions" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;"></div>
         <div id="activeTripMsg" style="margin-top:12px;"></div>
-        <div style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;"></div>
+        <div
+          style="position:absolute; top:18px; right:16px; width:10px; height:10px; border-radius:50%; background:var(--primary); animation:pulse 1.5s infinite;">
+        </div>
       </div>
 
       <div class="card" style="max-width: 480px;">
@@ -109,7 +116,8 @@
             <label for="riderComment">Comment</label>
             <input id="riderComment" name="comment" placeholder="Optional review comment…" />
           </div>
-          <button class="btn" type="submit" id="rateRiderBtn" style="align-self: flex-start; min-width: 150px;">Submit Rating</button>
+          <button class="btn" type="submit" id="rateRiderBtn" style="align-self: flex-start; min-width: 150px;">Submit
+            Rating</button>
         </form>
         <div id="rateRiderMsg" style="margin-top: 16px;"></div>
       </div>
@@ -117,8 +125,9 @@
   </main>
 
   <footer class="app-footer">
-    Developed by Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
+    Developed by Umar Behram &middot; 23i-2604 &middot; Vikram Kumar &middot; Roll 23K-2062 &middot; Section DS-4B
   </footer>
   <script type="module" src="/js/driver.js"></script>
 </body>
+
 </html>
