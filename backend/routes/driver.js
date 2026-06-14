@@ -242,4 +242,126 @@ router.get('/earnings', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ----- EN ROUTE --------------------------------------------------------
+// Transitions an ACCEPTED ride to DRIVER_EN_ROUTE.
+router.post('/rides/:id/enroute', async (req, res, next) => {
+  try {
+    const driverId = await getDriverId(req.user.user_id);
+    const result = await execute(
+      `UPDATE rides SET ride_status = 'DRIVER_EN_ROUTE'
+        WHERE ride_id = ? AND driver_id = ? AND ride_status = 'ACCEPTED'`,
+      [req.params.id, driverId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(409).json({ error: 'Ride not in ACCEPTED state' });
+    }
+    res.json({ ok: true, ride_id: Number(req.params.id), ride_status: 'DRIVER_EN_ROUTE' });
+  } catch (e) { next(e); }
+});
+
+// ----- DRIVER RATINGS --------------------------------------------------
+
+// Completed rides the driver can still rate (hasn't rated the rider yet).
+router.get('/ratings/pending', async (req, res, next) => {
+  try {
+    const driverId = await getDriverId(req.user.user_id);
+    const rows = await query(
+      `SELECT r.ride_id, r.requested_at, r.distance_km, r.fare,
+              ru.full_name AS rider_name,
+              pl.city AS pickup_city, dl.city AS dropoff_city
+         FROM rides r
+         JOIN users ru ON ru.user_id = r.rider_id
+         JOIN locations pl ON pl.location_id = r.pickup_loc_id
+         JOIN locations dl ON dl.location_id = r.dropoff_loc_id
+         LEFT JOIN ratings rt
+                ON rt.ride_id = r.ride_id AND rt.rated_by = (
+                     SELECT user_id FROM drivers WHERE driver_id = ?
+                   )
+        WHERE r.driver_id = ?
+          AND r.ride_status = 'COMPLETED'
+          AND rt.rating_id IS NULL
+        ORDER BY r.requested_at DESC`,
+      [driverId, driverId]
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+// Driver submits a rating for a rider.
+router.post('/ratings', async (req, res, next) => {
+  const conn = await pool.getConnection();
+  try {
+    const { ride_id, score, comment = null } = req.body || {};
+    if (!ride_id || !score) {
+      return res.status(400).json({ error: 'ride_id and score required' });
+    }
+    const numScore = Number(score);
+    if (!Number.isInteger(numScore) || numScore < 1 || numScore > 5) {
+      return res.status(400).json({ error: 'score must be an integer 1-5' });
+    }
+
+    const driverId = await getDriverId(req.user.user_id);
+
+    await conn.beginTransaction();
+
+    // Verify the ride belongs to this driver and is completed.
+    const [rr] = await conn.query(
+      `SELECT r.rider_id, r.ride_status
+         FROM rides r
+        WHERE r.ride_id = ? AND r.driver_id = ?`,
+      [ride_id, driverId]
+    );
+    if (rr.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Ride not found or not yours' });
+    }
+    if (rr[0].ride_status !== 'COMPLETED') {
+      await conn.rollback();
+      return res.status(409).json({ error: 'You can only rate a completed ride' });
+    }
+
+    const riderUserId = rr[0].rider_id;
+
+    // UPSERT rating (driver → rider).
+    await conn.query(
+      `INSERT INTO ratings (ride_id, rated_by, rated_user, score, comment)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE score = VALUES(score),
+                               comment = VALUES(comment),
+                               rated_at = CURRENT_TIMESTAMP`,
+      [ride_id, req.user.user_id, riderUserId, numScore, comment]
+    );
+
+    // Recompute rider's average rating from all ratings they've received.
+    const [avg] = await conn.query(
+      `SELECT IFNULL(AVG(score), 0) AS avg_score
+         FROM ratings WHERE rated_user = ?`,
+      [riderUserId]
+    );
+    const avgScore = Number(avg[0].avg_score);
+
+    // Flag rider if average drops below 3.0 (spec requirement).
+    if (avgScore < 3.0) {
+      await conn.query(
+        `UPDATE users SET is_flagged = 1 WHERE user_id = ?`,
+        [riderUserId]
+      );
+      await conn.query(
+        `INSERT INTO admin_notifications (message, related_user_id)
+         VALUES (?, ?)`,
+        [
+          `Rider #${riderUserId} flagged for low average rating (${avgScore.toFixed(2)}).`,
+          riderUserId,
+        ]
+      );
+    }
+
+    await conn.commit();
+    res.status(201).json({ ok: true });
+  } catch (e) {
+    await conn.rollback();
+    next(e);
+  } finally { conn.release(); }
+});
+
 module.exports = router;

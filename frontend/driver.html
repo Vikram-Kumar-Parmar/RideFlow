@@ -19,6 +19,7 @@
     <div class="tabs">
       <button data-tab="status" class="active">Status</button>
       <button data-tab="incoming">Incoming requests</button>
+      <button data-tab="ratings">Rate Rider</button>
       <button data-tab="earnings">Earnings</button>
       <button data-tab="history">Trip history</button>
     </div>
@@ -66,6 +67,39 @@
       <div class="card">
         <h2>All your rides</h2>
         <div id="historyTable" style="overflow-x: auto;"></div>
+      </div>
+    </section>
+
+    <section id="tab-ratings" class="hide">
+      <div class="card">
+        <h2>Rate a Rider</h2>
+        <p style="color:var(--muted); font-size:13px; margin-bottom: 20px;">
+          Rate riders from your completed trips. Only unrated rides are shown.
+        </p>
+        <form id="rateRiderForm" style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="form-row">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label for="rateRiderRide">Select Ride</label>
+              <select name="ride_id" id="rateRiderRide"></select>
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 100px;">
+              <label for="riderScore">Rating Score</label>
+              <select id="riderScore" name="score">
+                <option>5</option>
+                <option>4</option>
+                <option>3</option>
+                <option>2</option>
+                <option>1</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="riderComment">Comment</label>
+            <input id="riderComment" name="comment" placeholder="Optional review comment…" />
+          </div>
+          <button class="btn" type="submit" id="rateRiderBtn" style="align-self: flex-start; min-width: 150px;">Submit Rating</button>
+        </form>
+        <div id="rateRiderMsg" style="margin-top: 16px;"></div>
       </div>
     </section>
   </main>

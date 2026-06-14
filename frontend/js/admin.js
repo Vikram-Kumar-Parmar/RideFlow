@@ -18,6 +18,7 @@ tabs.forEach((b) => {
 const LOADERS = {
   dash: loadDash, users: loadUsers, drivers: loadDrivers, vehicles: loadVehicles,
   fares: loadFares, reports: loadReports, alerts: loadAlerts,
+  promos: loadPromos, complaints: loadComplaints, payouts: loadPayouts,
 };
 
 function table(rows, cols, empty) {
@@ -265,6 +266,27 @@ async function loadReports() {
       { h: 'Status', k: 'avail_status' },
     ], 'No drivers found in that city.');
   };
+
+  // Revenue by payment method
+  const revenueByMethod = await api('/api/admin/reports/revenue-by-method');
+  document.getElementById('revenueMethodTable').innerHTML = table(revenueByMethod, [
+    { h: 'Payment Method', k: 'payment_method' },
+    { h: 'Transactions', k: 'total_transactions' },
+    { h: 'Total Revenue', f: (r) => fmtMoney(r.total_revenue) },
+  ], 'No paid transactions yet.');
+
+  // Refunds & failed payments
+  const refData = await api('/api/admin/reports/refunds');
+  document.getElementById('refundsTable').innerHTML = `
+    <table><thead><tr><th>Metric</th><th>Count</th><th>Total Amount</th></tr></thead><tbody>
+      <tr><td>Refunds</td><td>${refData.refunds.refund_count}</td><td>${fmtMoney(refData.refunds.total_refunded)}</td></tr>
+      <tr><td>Failed Payments</td><td>${refData.failed_payments.failed_count}</td><td>${fmtMoney(refData.failed_payments.total_failed)}</td></tr>
+    </tbody></table>
+    ${refData.complaints_by_status.length ? `
+      <h4 style="margin-top:16px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">Complaints by Status</h4>
+      <table><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>
+        ${refData.complaints_by_status.map((c) => `<tr><td>${escape(c.comp_status)}</td><td>${c.count}</td></tr>`).join('')}
+      </tbody></table>` : ''}`;
 }
 
 // ---- ALERTS ------------------------------------------------------
@@ -276,6 +298,117 @@ async function loadAlerts() {
     { h: 'Message', k: 'message' },
     { h: 'Related user', k: 'related_user_name' },
   ], 'No notifications yet — flag a driver to test.');
+}
+
+// ---- PROMO CODES -------------------------------------------------
+async function loadPromos() {
+  const rows = await api('/api/admin/promo-codes');
+  document.getElementById('promoListTable').innerHTML = table(rows, [
+    { h: '#', k: 'promo_id' }, { h: 'Code', k: 'code' },
+    { h: 'Discount %', k: 'discount_pct' },
+    { h: 'Valid Until', k: 'valid_until' },
+    { h: 'Max Uses', k: 'max_uses' }, { h: 'Used', k: 'usage_count' },
+    { h: 'Active', f: (r) => r.is_active
+      ? `<span class="pill ok">YES</span>`
+      : `<span class="pill bad">NO</span>` },
+    { h: 'Action', f: (r) => r.is_active
+      ? `<button class="btn danger" style="font-size:12px; padding:4px 10px;" data-promo-deact="${r.promo_id}">Deactivate</button>`
+      : '' },
+  ], 'No promo codes yet.');
+
+  document.querySelectorAll('[data-promo-deact]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api(`/api/admin/promo-codes/${btn.dataset.promoDeact}`, {
+          method: 'PUT', body: JSON.stringify({ is_active: false }),
+        });
+        loadPromos();
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+document.getElementById('promoForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('promoMsg');
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  body.discount_pct = Number(body.discount_pct);
+  body.max_uses = Number(body.max_uses);
+  try {
+    await api('/api/admin/promo-codes', { method: 'POST', body: JSON.stringify(body) });
+    msg.innerHTML = `<div class="status-msg ok">Promo code created.</div>`;
+    e.target.reset();
+    loadPromos();
+  } catch (err) {
+    msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
+  }
+});
+
+// ---- COMPLAINTS --------------------------------------------------
+async function loadComplaints() {
+  const rows = await api('/api/admin/complaints');
+  document.getElementById('complaintsTable').innerHTML = table(rows, [
+    { h: '#', k: 'complaint_id' }, { h: 'Ride', k: 'ride_id' },
+    { h: 'Filed By', k: 'filed_by_name' }, { h: 'Against', k: 'against_user_name' },
+    { h: 'Description', f: (r) => `<span title="${escape(r.description)}">${escape(r.description.substring(0,60))}${r.description.length>60?'…':''}</span>` },
+    { h: 'Filed At', f: (r) => fmtDate(r.filed_at) },
+    {
+      h: 'Status',
+      f: (r) => `
+        <select data-comp="${r.complaint_id}" class="comp-status">
+          ${['OPEN','IN_PROGRESS','RESOLVED','REJECTED'].map((s) =>
+            `<option ${r.comp_status===s?'selected':''}>${s}</option>`).join('')}
+        </select>`,
+    },
+  ], 'No complaints filed yet.');
+
+  document.querySelectorAll('.comp-status').forEach((el) => {
+    el.addEventListener('change', async () => {
+      try {
+        await api(`/api/admin/complaints/${el.dataset.comp}/resolve`, {
+          method: 'PUT', body: JSON.stringify({ comp_status: el.value }),
+        });
+      } catch (e) { alert(e.message); }
+    });
+  });
+}
+
+// ---- PAYOUTS -----------------------------------------------------
+async function loadPayouts() {
+  const rows = await api('/api/admin/payouts');
+  document.getElementById('payoutsTable').innerHTML = table(rows, [
+    { h: 'Earning #', k: 'earning_id' }, { h: 'Ride', k: 'ride_id' },
+    { h: 'Driver', k: 'driver_name' },
+    { h: 'Gross Fare', f: (r) => fmtMoney(r.gross_fare) },
+    { h: 'Comm %', k: 'commission_pct' },
+    { h: 'Net Earning', f: (r) => fmtMoney(r.net_earning) },
+    { h: 'Earned At', f: (r) => fmtDate(r.earned_at) },
+    {
+      h: 'Action',
+      f: (r) => `<button class="btn ok" style="font-size:12px; padding:4px 10px;" data-payout-driver="${r.driver_id}">Process All</button>`,
+    },
+  ], 'No pending payouts.');
+
+  // Group by driver — clicking Process processes ALL pending for that driver.
+  const processed = new Set();
+  document.querySelectorAll('[data-payout-driver]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const driverId = btn.dataset.payoutDriver;
+      if (processed.has(driverId)) return;
+      processed.add(driverId);
+      try {
+        const res = await api('/api/admin/payouts/process', {
+          method: 'POST', body: JSON.stringify({ driver_id: Number(driverId) }),
+        });
+        alert(`Processed ${res.earning_count} earning(s) totalling Rs ${res.total_paid_out.toFixed(2)} for driver #${driverId}.`);
+        loadPayouts();
+      } catch (e) {
+        processed.delete(driverId);
+        alert(e.message);
+      }
+    });
+  });
 }
 
 loadDash();

@@ -30,3 +30,7 @@ CREATE TABLE IF NOT EXISTS admin_notifications (
     FOREIGN KEY (related_user_id) REFERENCES users(user_id)
     ON UPDATE CASCADE ON DELETE SET NULL
 );
+
+-- 5) is_flagged on users — required by rider low-rating flag logic (spec Module 1 & 5).
+ALTER TABLE users
+  ADD COLUMN is_flagged BOOLEAN NOT NULL DEFAULT 0;

@@ -321,4 +321,201 @@ router.get('/reports/top-drivers', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// 9) Revenue breakdown by payment method.
+router.get('/reports/revenue-by-method', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT payment_method,
+              COUNT(*)               AS total_transactions,
+              ROUND(SUM(amount), 2)  AS total_revenue
+         FROM payments
+        WHERE payment_status = 'PAID'
+        GROUP BY payment_method
+        ORDER BY total_revenue DESC`
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+// 10) Refund and dispute totals.
+router.get('/reports/refunds', async (req, res, next) => {
+  try {
+    const refunds = await query(
+      `SELECT COUNT(*)              AS refund_count,
+              ROUND(SUM(amount), 2) AS total_refunded
+         FROM payments
+        WHERE payment_status = 'REFUNDED'`
+    );
+    const failed = await query(
+      `SELECT COUNT(*)              AS failed_count,
+              ROUND(SUM(amount), 2) AS total_failed
+         FROM payments
+        WHERE payment_status = 'FAILED'`
+    );
+    const complaints = await query(
+      `SELECT comp_status, COUNT(*) AS count
+         FROM complaints
+        GROUP BY comp_status`
+    );
+    res.json({
+      refunds: refunds[0],
+      failed_payments: failed[0],
+      complaints_by_status: complaints,
+    });
+  } catch (e) { next(e); }
+});
+
+// ----- PROMO CODE MANAGEMENT -------------------------------------------
+
+router.get('/promo-codes', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT * FROM promo_codes ORDER BY promo_id DESC`
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+router.post('/promo-codes', async (req, res, next) => {
+  try {
+    const { code, discount_pct, valid_until, max_uses = 100 } = req.body || {};
+    if (!code || !discount_pct || !valid_until) {
+      return res.status(400).json({ error: 'code, discount_pct, and valid_until are required' });
+    }
+    const pct = Number(discount_pct);
+    if (pct <= 0 || pct > 100) {
+      return res.status(400).json({ error: 'discount_pct must be between 0 and 100' });
+    }
+    const result = await execute(
+      `INSERT INTO promo_codes (code, discount_pct, valid_until, max_uses, is_active)
+       VALUES (?, ?, ?, ?, 1)`,
+      [String(code).toUpperCase(), pct, valid_until, Number(max_uses)]
+    );
+    res.status(201).json({ ok: true, promo_id: result.insertId });
+  } catch (e) {
+    if (e.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Promo code already exists' });
+    }
+    next(e);
+  }
+});
+
+router.put('/promo-codes/:id', async (req, res, next) => {
+  try {
+    const { discount_pct, valid_until, max_uses, is_active } = req.body || {};
+    await execute(
+      `UPDATE promo_codes
+          SET discount_pct  = COALESCE(?, discount_pct),
+              valid_until   = COALESCE(?, valid_until),
+              max_uses      = COALESCE(?, max_uses),
+              is_active     = COALESCE(?, is_active)
+        WHERE promo_id = ?`,
+      [
+        discount_pct != null ? Number(discount_pct) : null,
+        valid_until || null,
+        max_uses    != null ? Number(max_uses) : null,
+        is_active   != null ? (is_active ? 1 : 0) : null,
+        req.params.id,
+      ]
+    );
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ----- COMPLAINTS MANAGEMENT -------------------------------------------
+
+router.get('/complaints', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT c.*,
+              fb.full_name  AS filed_by_name,
+              ag.full_name  AS against_user_name
+         FROM complaints c
+         JOIN users fb ON fb.user_id = c.filed_by
+         JOIN users ag ON ag.user_id = c.against_user
+        ORDER BY c.filed_at DESC`
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+router.put('/complaints/:id/resolve', async (req, res, next) => {
+  try {
+    const { comp_status } = req.body || {};
+    if (!['IN_PROGRESS', 'RESOLVED', 'REJECTED'].includes(comp_status)) {
+      return res.status(400).json({ error: 'invalid comp_status' });
+    }
+    await execute(
+      `UPDATE complaints SET comp_status = ? WHERE complaint_id = ?`,
+      [comp_status, req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+// ----- DRIVER PAYOUT MANAGEMENT ----------------------------------------
+
+// List all driver_earnings with payout_status = 'PENDING'.
+router.get('/payouts', async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT de.earning_id, de.ride_id, de.driver_id,
+              u.full_name AS driver_name,
+              de.gross_fare, de.commission_pct, de.net_earning,
+              de.payout_status, de.earned_at
+         FROM driver_earnings de
+         JOIN drivers d ON d.driver_id = de.driver_id
+         JOIN users   u ON u.user_id   = d.user_id
+        WHERE de.payout_status = 'PENDING'
+        ORDER BY de.earned_at DESC`
+    );
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+// Process all pending payouts for a specific driver.
+router.post('/payouts/process', async (req, res, next) => {
+  const conn = await pool.getConnection();
+  try {
+    const driverId = Number(req.body?.driver_id);
+    if (!driverId) {
+      return res.status(400).json({ error: 'driver_id required' });
+    }
+
+    await conn.beginTransaction();
+
+    // Sum all pending net earnings for this driver.
+    const [pending] = await conn.query(
+      `SELECT IFNULL(SUM(net_earning), 0) AS total_pending,
+              COUNT(*) AS earning_count
+         FROM driver_earnings
+        WHERE driver_id = ? AND payout_status = 'PENDING'`,
+      [driverId]
+    );
+    const totalPending = Number(pending[0].total_pending);
+    const earningCount = Number(pending[0].earning_count);
+
+    if (earningCount === 0) {
+      await conn.rollback();
+      return res.status(409).json({ error: 'No pending payouts for this driver' });
+    }
+
+    // Mark all pending earnings as PAID.
+    await conn.query(
+      `UPDATE driver_earnings SET payout_status = 'PAID'
+        WHERE driver_id = ? AND payout_status = 'PENDING'`,
+      [driverId]
+    );
+
+    // The driver wallet already has the balance accumulated at trip finish.
+    // This endpoint just marks earnings as officially paid out.
+
+    await conn.commit();
+    res.json({ ok: true, driver_id: driverId, total_paid_out: totalPending, earning_count: earningCount });
+  } catch (e) {
+    await conn.rollback();
+    next(e);
+  } finally { conn.release(); }
+});
+
 module.exports = router;

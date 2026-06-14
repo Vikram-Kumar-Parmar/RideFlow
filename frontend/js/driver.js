@@ -15,6 +15,7 @@ tabs.forEach((b) => {
     if (b.dataset.tab === 'earnings') loadEarnings();
     if (b.dataset.tab === 'history') loadHistory();
     if (b.dataset.tab === 'status') loadProfile();
+    if (b.dataset.tab === 'ratings') loadRiderRateOptions();
   });
 });
 
@@ -83,8 +84,11 @@ async function loadIncoming() {
       try {
         await api(`/api/driver/rides/${id}/${act}`, { method: 'POST' });
         if (act === 'accept') {
-          // Auto-progress: start → finish on confirm so we can demo the trigger.
-          if (confirm('Ride accepted. Mark as IN_PROGRESS now?')) {
+          // Step through the full ride lifecycle with confirmation prompts.
+          if (confirm('Ride accepted! Mark as En Route to rider now?')) {
+            await api(`/api/driver/rides/${id}/enroute`, { method: 'POST' });
+          }
+          if (confirm('Mark as IN_PROGRESS (trip started)?')) {
             await api(`/api/driver/rides/${id}/start`, { method: 'POST' });
           }
           if (confirm('Mark as COMPLETED + collect payment now?')) {
@@ -139,3 +143,45 @@ async function loadHistory() {
 }
 
 loadProfile();
+
+// ---------- RATE RIDER (Driver → Rider) --------------------------------
+async function loadRiderRateOptions() {
+  const pending = await api('/api/driver/ratings/pending');
+  const sel = document.getElementById('rateRiderRide');
+  const btn = document.getElementById('rateRiderBtn');
+  if (pending.length === 0) {
+    sel.innerHTML = `<option value="">No rides to rate yet</option>`;
+    sel.disabled = true;
+    if (btn) btn.disabled = true;
+  } else {
+    sel.disabled = false;
+    if (btn) btn.disabled = false;
+    sel.innerHTML = pending.map(
+      (r) => `<option value="${r.ride_id}">
+        #${r.ride_id} — ${escape(r.rider_name)} (${escape(r.pickup_city)} → ${escape(r.dropoff_city)})
+      </option>`
+    ).join('');
+  }
+}
+
+document.getElementById('rateRiderForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('rateRiderMsg');
+  msg.innerHTML = '';
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd);
+  if (!body.ride_id) {
+    msg.innerHTML = `<div class="status-msg err">No ride selected.</div>`;
+    return;
+  }
+  body.ride_id = Number(body.ride_id);
+  body.score   = Number(body.score);
+  if (!body.comment) delete body.comment;
+  try {
+    await api('/api/driver/ratings', { method: 'POST', body: JSON.stringify(body) });
+    msg.innerHTML = `<div class="status-msg ok">Rating submitted.</div>`;
+    loadRiderRateOptions();
+  } catch (err) {
+    msg.innerHTML = `<div class="status-msg err">${err.message}</div>`;
+  }
+});

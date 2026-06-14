@@ -348,6 +348,28 @@ router.post('/ratings', async (req, res, next) => {
       }
     }
 
+    // ----- Rider low-rating check (spec: flag rider if avg < 3.0) ----------
+    const [riderAvgRow] = await conn.query(
+      `SELECT IFNULL(AVG(score), 0) AS avg_score
+         FROM ratings WHERE rated_user = ?`,
+      [req.user.user_id]
+    );
+    const riderAvg = Number(riderAvgRow[0].avg_score);
+    if (riderAvg > 0 && riderAvg < 3.0) {
+      await conn.query(
+        `UPDATE users SET is_flagged = 1 WHERE user_id = ?`,
+        [req.user.user_id]
+      );
+      await conn.query(
+        `INSERT INTO admin_notifications (message, related_user_id)
+         VALUES (?, ?)`,
+        [
+          `Rider #${req.user.user_id} flagged for low average rating (${riderAvg.toFixed(2)}).`,
+          req.user.user_id,
+        ]
+      );
+    }
+
     await conn.commit();
     res.status(201).json({ ok: true });
   } catch (e) {
@@ -356,6 +378,79 @@ router.post('/ratings', async (req, res, next) => {
   } finally {
     conn.release();
   }
+});
+
+// ----- CANCEL RIDE -----------------------------------------------------
+// Rider can cancel a ride that is still in REQUESTED state.
+router.post('/rides/:id/cancel', async (req, res, next) => {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Verify the ride belongs to this rider and is still cancellable.
+    const [rr] = await conn.query(
+      `SELECT ride_id, ride_status FROM rides
+        WHERE ride_id = ? AND rider_id = ?`,
+      [req.params.id, req.user.user_id]
+    );
+    if (rr.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Ride not found or not yours' });
+    }
+    if (!['REQUESTED', 'ACCEPTED', 'DRIVER_EN_ROUTE'].includes(rr[0].ride_status)) {
+      await conn.rollback();
+      return res.status(409).json({
+        error: 'Ride cannot be cancelled in its current state',
+      });
+    }
+
+    // Cancel the ride.
+    await conn.query(
+      `UPDATE rides SET ride_status = 'CANCELLED' WHERE ride_id = ?`,
+      [req.params.id]
+    );
+
+    // If a pending payment exists, mark it FAILED.
+    await conn.query(
+      `UPDATE payments SET payment_status = 'FAILED'
+        WHERE ride_id = ? AND payment_status = 'PENDING'`,
+      [req.params.id]
+    );
+
+    // If the rider paid via WALLET, refund the amount.
+    const [pmt] = await conn.query(
+      `SELECT amount, payment_method FROM payments
+        WHERE ride_id = ? LIMIT 1`,
+      [req.params.id]
+    );
+    if (pmt.length && pmt[0].payment_method === 'WALLET') {
+      await conn.query(
+        `UPDATE users SET wallet_balance = wallet_balance + ?
+          WHERE user_id = ?`,
+        [pmt[0].amount, req.user.user_id]
+      );
+      await conn.query(
+        `UPDATE payments SET payment_status = 'REFUNDED'
+          WHERE ride_id = ?`,
+        [req.params.id]
+      );
+    }
+
+    // Free the driver back to ONLINE if they had accepted.
+    await conn.query(
+      `UPDATE drivers d
+          JOIN rides r ON r.driver_id = d.driver_id
+         SET d.avail_status = 'ONLINE'
+       WHERE r.ride_id = ? AND d.avail_status = 'ON_TRIP'`,
+      [req.params.id]
+    );
+
+    await conn.commit();
+    res.json({ ok: true, ride_id: Number(req.params.id), ride_status: 'CANCELLED' });
+  } catch (e) {
+    await conn.rollback();
+    next(e);
+  } finally { conn.release(); }
 });
 
 module.exports = router;

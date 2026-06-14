@@ -54,11 +54,12 @@ document.getElementById('bookForm').addEventListener('submit', async (e) => {
 // ---------- HISTORY -----------------------------------------------------
 async function loadHistory() {
   const rows = await api('/api/rider/rides');
+  const cancellable = ['REQUESTED', 'ACCEPTED', 'DRIVER_EN_ROUTE'];
   const html = rows.length === 0
     ? `<p style="color:var(--muted)">No rides yet — book one!</p>`
     : `<table><thead><tr>
         <th>#</th><th>When</th><th>Driver</th><th>Vehicle</th>
-        <th>Pickup → Dropoff</th><th>Status</th><th>Fare</th><th>Payment</th>
+        <th>Pickup → Dropoff</th><th>Status</th><th>Fare</th><th>Payment</th><th>Action</th>
       </tr></thead><tbody>${rows.map((r) => `
         <tr>
           <td>${r.ride_id}</td>
@@ -69,8 +70,24 @@ async function loadHistory() {
           <td>${statusPill(r.ride_status)}</td>
           <td>${fmtMoney(r.fare)}</td>
           <td>${escape(r.payment_method || '-')} ${paymentPill(r.payment_status)}</td>
+          <td>${cancellable.includes(r.ride_status)
+            ? `<button class="btn danger" style="font-size:12px; padding: 4px 10px;" data-cancel="${r.ride_id}">Cancel</button>`
+            : '—'}</td>
         </tr>`).join('')}</tbody></table>`;
   document.getElementById('historyTable').innerHTML = html;
+
+  // Wire up cancel buttons.
+  document.querySelectorAll('[data-cancel]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to cancel this ride?')) return;
+      try {
+        await api(`/api/rider/rides/${btn.dataset.cancel}/cancel`, { method: 'POST' });
+        loadHistory();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
 }
 
 function statusPill(s) {

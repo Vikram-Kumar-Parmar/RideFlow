@@ -22,6 +22,9 @@
       <button data-tab="drivers">Drivers</button>
       <button data-tab="vehicles">Vehicles</button>
       <button data-tab="fares">Fare rules</button>
+      <button data-tab="promos">Promo Codes</button>
+      <button data-tab="complaints">Complaints</button>
+      <button data-tab="payouts">Payouts</button>
       <button data-tab="reports">Reports</button>
       <button data-tab="alerts">Alerts</button>
     </div>
@@ -115,6 +118,65 @@
           <button class="btn" id="loadDriversCity" style="height: 44px;">Find Drivers</button>
         </div>
         <div id="driversCityTable" style="margin-top: 20px; overflow-x: auto;"></div>
+      </div>
+      <div class="card">
+        <h2>Revenue by Payment Method — <code>SUM(amount) GROUP BY payment_method</code></h2>
+        <div id="revenueMethodTable" style="overflow-x: auto;"></div>
+      </div>
+      <div class="card">
+        <h2>Refunds &amp; Failed Payments</h2>
+        <div id="refundsTable" style="overflow-x: auto;"></div>
+      </div>
+    </section>
+
+    <section id="tab-promos" class="hide">
+      <div class="card">
+        <h2>Create Promo Code</h2>
+        <form id="promoForm" style="display: flex; flex-direction: column; gap: 16px; max-width: 480px;">
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label for="promoCode">Code</label>
+              <input id="promoCode" name="code" placeholder="SAVE20" required />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="promoDiscount">Discount %</label>
+              <input id="promoDiscount" name="discount_pct" type="number" min="1" max="100" value="10" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label for="promoExpiry">Valid Until</label>
+              <input id="promoExpiry" name="valid_until" type="date" required />
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="promoMaxUses">Max Uses</label>
+              <input id="promoMaxUses" name="max_uses" type="number" min="1" value="100" />
+            </div>
+          </div>
+          <button class="btn" type="submit" style="align-self: flex-start;">Create Code</button>
+        </form>
+        <div id="promoMsg" style="margin-top: 12px;"></div>
+      </div>
+      <div class="card">
+        <h2>All Promo Codes</h2>
+        <div id="promoListTable" style="overflow-x: auto;"></div>
+      </div>
+    </section>
+
+    <section id="tab-complaints" class="hide">
+      <div class="card">
+        <h2>Complaints Management</h2>
+        <div id="complaintsTable" style="overflow-x: auto;"></div>
+      </div>
+    </section>
+
+    <section id="tab-payouts" class="hide">
+      <div class="card">
+        <h2>Pending Driver Payouts</h2>
+        <p style="color:var(--muted); font-size:13px; margin-bottom: 16px;">
+          All driver earnings marked PENDING. Click "Process" to mark a driver's earnings as officially paid out.
+        </p>
+        <div id="payoutsTable" style="overflow-x: auto;"></div>
       </div>
     </section>
 
